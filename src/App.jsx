@@ -8,6 +8,8 @@ import FichePage from './pages/FichePage'
 import FormPage from './pages/FormPage'
 import ModFormPage from './pages/ModFormPage'
 import RevisionPage from './pages/RevisionPage'
+import BottomNav from './components/BottomNav'
+import ParticleBackground from './components/ParticleBackground'
 import { useFirebase } from './hooks/useFirebase'
 import { useStats } from './hooks/useStats'
 import { useHistory } from './hooks/useHistory'
@@ -15,12 +17,6 @@ import { usePinned } from './hooks/usePinned'
 import { useNotifications } from './hooks/useNotifications'
 import { useMastery } from './hooks/useMastery'
 import { useSpacedRepetition } from './hooks/useSpacedRepetition'
-import BottomNav from './components/BottomNav'
-import ParticleBackground from './components/ParticleBackground'
-import { usePageEnter } from './hooks/useGSAP'
-import { useSpacedRepetition } from './hooks/useSpacedRepetition'
-import BottomNav from './components/BottomNav'
-import ParticleBackground from './components/ParticleBackground'
 import { usePageEnter } from './hooks/useGSAP'
 import { collection, addDoc } from 'firebase/firestore'
 import { db } from './lib/firebase'
@@ -32,11 +28,9 @@ export default function App() {
   const { pinned, togglePin, isPinned } = usePinned()
   const { permission: notifPermission, settings: notifSettings, requestPermission, saveSettings: saveNotifSettings, sendNotification } = useNotifications()
   const { getLevel, setLevel, updateFromRevision, getMasteryStats, clearMastery } = useMastery()
-  const { isDue, getDueCount, updateCard: updateSRSCard, sortByPriority, clearSRS } = useSpacedRepetition()
   const { updateSRS, getDueNotes, getSRSStats, clearSRS } = useSpacedRepetition()
 
   const [page, setPage] = useState('home')
-  const appRef = usePageEnter([])
   const [curMod, setCurMod] = useState(null)
   const [curFiche, setCurFiche] = useState(null)
   const [editingNote, setEditingNote] = useState(null)
@@ -44,6 +38,8 @@ export default function App() {
   const [accent, setAccent] = useState(() => localStorage.getItem('lgpi-accent') || '#6C63FF')
   const [toast, setToast] = useState({ msg: '', visible: false })
   let toastTimer = null
+
+  const appRef = usePageEnter([])
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode)
