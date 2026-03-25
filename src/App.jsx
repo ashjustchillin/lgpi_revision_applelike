@@ -29,6 +29,7 @@ export default function App() {
   const { permission: notifPermission, settings: notifSettings, requestPermission, saveSettings: saveNotifSettings, sendNotification } = useNotifications()
   const { getLevel, setLevel, updateFromRevision, getMasteryStats, clearMastery } = useMastery()
   const { updateSRS, getDueNotes, getSRSStats, clearSRS } = useSpacedRepetition()
+  const appRef = usePageEnter([])
 
   const [page, setPage] = useState('home')
   const [curMod, setCurMod] = useState(null)
@@ -38,8 +39,6 @@ export default function App() {
   const [accent, setAccent] = useState(() => localStorage.getItem('lgpi-accent') || '#6C63FF')
   const [toast, setToast] = useState({ msg: '', visible: false })
   let toastTimer = null
-
-  const appRef = usePageEnter([])
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode)
@@ -134,7 +133,7 @@ export default function App() {
 
   const handleImportJSON = useCallback(async ({ notes: importNotes, mods: importMods }) => {
     try {
-      let modCount = 0, noteCount = 0
+      let noteCount = 0, modCount = 0
       for (const m of importMods) {
         if (!mods.find(x => x.id === m.id)) {
           await addDoc(collection(db, 'modules'), { ...m, createdAt: m.createdAt || Date.now() })
