@@ -23,4 +23,4 @@ C'est tout — Cloudflare gère le reste automatiquement à chaque push.
 - **React 18** + **Vite**
 - **Tailwind CSS** pour le style
 - **Framer Motion** pour les animations
-- **Firebase Firestore** pour la synchronisation
+- **Firebase Firestore** pour la synchronisation  
