@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { SyncDot } from './UI'
 import { ACCENT_COLORS } from '../lib/firebase'
 
-export default function Header({ title, syncState, darkMode, onDarkToggle, accent, onAccentChange, onHome, onRevision }) {
+export default function Header({ title, syncState, darkMode, onDarkToggle, accent, onAccentChange, onHome, onRevision, isAdmin, onLogout, role }) {
   const [accentOpen, setAccentOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -60,6 +60,15 @@ export default function Header({ title, syncState, darkMode, onDarkToggle, accen
         {/* Actions */}
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <SyncDot state={syncState} />
+          {/* Badge role */}
+          <span className="hidden sm:inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full"
+            style={{
+              background: isAdmin ? 'rgba(108,99,255,.12)' : 'rgba(52,211,153,.12)',
+              color: isAdmin ? 'var(--accent)' : '#059669',
+            }}
+          >
+            {isAdmin ? 'Admin' : 'Lecteur'}
+          </span>
 
           {/* Dark */}
           <motion.button whileTap={{ scale: .88 }} onClick={onDarkToggle}
@@ -116,6 +125,13 @@ export default function Header({ title, syncState, darkMode, onDarkToggle, accen
             </AnimatePresence>
           </div>
 
+          {/* Logout */}
+          <motion.button whileTap={{ scale: .88 }} onClick={onLogout}
+            className="hidden sm:flex items-center justify-center w-8 h-8 rounded-full text-sm"
+            style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-2)' }}
+            title="Se deconnecter"
+          >🚪</motion.button>
+
           {/* Mobile menu */}
           <motion.button whileTap={{ scale: .88 }} onClick={() => setMobileOpen(true)}
             className="sm:hidden flex items-center justify-center w-8 h-8 rounded-full text-sm"
@@ -148,6 +164,7 @@ export default function Header({ title, syncState, darkMode, onDarkToggle, accen
                 { icon: '🏠', label: 'Accueil', action: () => { onHome(); setMobileOpen(false) } },
                 { icon: '🃏', label: 'Mode revision', action: () => { onRevision(); setMobileOpen(false) } },
                 { icon: darkMode ? '☀️' : '🌙', label: darkMode ? 'Mode clair' : 'Mode sombre', action: () => { onDarkToggle(); setMobileOpen(false) } },
+                { icon: '🚪', label: 'Se deconnecter', action: () => { onLogout(); setMobileOpen(false) } },
               ].map((item, i) => (
                 <motion.button key={item.label}
                   initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}

@@ -5,7 +5,7 @@ import { renderMarkdown, relativeDate, getType } from '../lib/utils'
 import { exportFichePDF } from '../lib/exportPDF'
 import { MasteryBadge, MasterySelector } from '../components/Mastery'
 
-export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelete, onFiche, onToast, isPinned, onTogglePin, masteryLevel, onMasteryChange }) {
+export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelete, onFiche, onToast, isPinned, onTogglePin, masteryLevel, onMasteryChange, isAdmin }) {
   const [confirm, setConfirm] = useState(false)
   const [exporting, setExporting] = useState(false)
 
@@ -147,7 +147,8 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
         {note.updatedAt ? ` · modifiée ${relativeDate(new Date(note.updatedAt).toISOString().slice(0, 10))}` : ''}
       </p>
 
-      {/* Actions modifier/supprimer */}
+      {/* Actions modifier/supprimer — admin seulement */}
+      {isAdmin && (
       <div className="flex gap-3 flex-wrap">
         <motion.button whileTap={{ scale: .96 }} onClick={onEdit}
           className="px-5 py-2.5 text-white text-sm font-medium rounded-xl hover:brightness-90 transition-all"
@@ -157,6 +158,7 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
           className="px-5 py-2.5 bg-transparent text-red-500 border border-red-100 dark:border-red-900 text-sm font-medium rounded-xl hover:bg-red-50 dark:hover:bg-red-950 transition-all"
         >Supprimer</motion.button>
       </div>
+      )}
 
       {confirm && (
         <ConfirmModal

@@ -18,6 +18,8 @@ import { useNotifications } from './hooks/useNotifications'
 import { useMastery } from './hooks/useMastery'
 import { useSpacedRepetition } from './hooks/useSpacedRepetition'
 import { usePageEnter } from './hooks/useGSAP'
+import { useAuth } from './hooks/useAuth'
+import LoginScreen from './components/LoginScreen'
 import { collection, addDoc } from 'firebase/firestore'
 import { db } from './lib/firebase'
 
@@ -29,6 +31,7 @@ export default function App() {
   const { permission: notifPermission, settings: notifSettings, requestPermission, saveSettings: saveNotifSettings, sendNotification } = useNotifications()
   const { getLevel, setLevel, updateFromRevision, getMasteryStats, clearMastery } = useMastery()
   const { updateSRS, getDueNotes, getSRSStats, clearSRS } = useSpacedRepetition()
+  const { role, isAdmin, isLoggedIn, login, logout, error: authError } = useAuth()
   const appRef = usePageEnter([])
 
   const [page, setPage] = useState('home')
@@ -161,6 +164,15 @@ export default function App() {
     page === 'form' ? (editingNote ? 'Modifier' : 'Nouvelle fiche') :
     page === 'modform' ? 'Nouveau module' : 'Mode revision'
 
+  // Ecran de login si pas connecte
+  if (!isLoggedIn) {
+    return (
+      <div style={{ '--accent': accent, '--accent-bg': accent + '22', '--accent-light': accent + '1a' }}>
+        <LoginScreen onLogin={login} error={authError} />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen transition-colors duration-500" style={{ background: darkMode ? '#0a0a0a' : '#f5f5f7' }}>
       {page === 'home' && <ParticleBackground darkMode={darkMode} />}
@@ -170,6 +182,8 @@ export default function App() {
           onDarkToggle={() => setDarkMode(d => !d)}
           accent={accent} onAccentChange={setAccent}
           onHome={goHome} onRevision={goRevision}
+          isAdmin={isAdmin} onLogout={logout}
+          role={role}
         />
 
         <AnimatePresence mode="wait">
@@ -181,8 +195,8 @@ export default function App() {
               <HomePage
                 mods={mods} notes={notes} syncState={syncState}
                 onModule={goModule}
-                onAddMod={() => setPage('modform')}
-                onDeleteMod={async id => { await deleteMod(id); showToast('Module supprime') }}
+                onAddMod={isAdmin ? () => setPage('modform') : null}
+                onDeleteMod={isAdmin ? async id => { await deleteMod(id); showToast('Module supprime') } : null}
                 onRevision={goRevision}
                 history={history} onFiche={goFiche}
                 stats={stats} streak={streak} last7Days={last7Days}
@@ -198,6 +212,7 @@ export default function App() {
                 getMasteryLevel={getLevel}
                 masteryStats={masteryStats}
                 srsStats={srsStats}
+                isAdmin={isAdmin}
               />
             )}
 
@@ -206,14 +221,15 @@ export default function App() {
                 mod={currentMod} notes={notes}
                 onBack={goHome}
                 onFiche={id => goFiche(id)}
-                onNewFiche={() => { setEditingNote(null); setPage('form') }}
-                onDeleteNote={async id => { await deleteNote(id); showToast('Fiche supprimee') }}
+                onNewFiche={isAdmin ? () => { setEditingNote(null); setPage('form') } : null}
+                onDeleteNote={isAdmin ? async id => { await deleteNote(id); showToast('Fiche supprimee') } : null}
                 pinned={pinned}
                 onTogglePin={id => {
                   const was = isPinned(id); togglePin(id)
                   showToast(was ? 'Desepinglee' : 'Epinglee !')
                 }}
                 getMasteryLevel={getLevel}
+                isAdmin={isAdmin}
               />
             )}
 
@@ -221,8 +237,8 @@ export default function App() {
               <FichePage
                 note={currentNote} mod={currentMod} allNotes={notes}
                 onBack={dest => { if (dest === 'home') goHome(); else setPage('module') }}
-                onEdit={() => { setEditingNote(currentNote); setPage('form') }}
-                onDelete={async () => { await deleteNote(curFiche); showToast('Fiche supprimee'); setPage('module') }}
+                onEdit={isAdmin ? () => { setEditingNote(currentNote); setPage('form') } : null}
+                onDelete={isAdmin ? async () => { await deleteNote(curFiche); showToast('Fiche supprimee'); setPage('module') } : null}
                 onFiche={goFiche} onToast={showToast}
                 isPinned={isPinned(curFiche)}
                 onTogglePin={() => {
@@ -230,6 +246,7 @@ export default function App() {
                   showToast(was ? 'Desepinglee' : 'Epinglee !')
                 }}
                 masteryLevel={getLevel(curFiche)}
+                isAdmin={isAdmin}
                 onMasteryChange={level => {
                   setLevel(curFiche, level)
                   showToast('Niveau mis a jour !')
@@ -237,7 +254,7 @@ export default function App() {
               />
             )}
 
-            {page === 'form' && (
+            {page === 'form' && isAdmin && (
               <FormPage
                 note={editingNote} mods={mods} notes={notes} curMod={curMod}
                 onSave={async data => {
@@ -253,7 +270,7 @@ export default function App() {
               />
             )}
 
-            {page === 'modform' && (
+            {page === 'modform' && isAdmin && (
               <ModFormPage
                 onSave={async data => { await saveMod(data); showToast('Module cree !'); goHome() }}
                 onCancel={goHome}

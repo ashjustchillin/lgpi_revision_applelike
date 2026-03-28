@@ -7,7 +7,7 @@ import { MasteryBadge } from '../components/Mastery'
 const container = { hidden: {}, show: { transition: { staggerChildren: .04 } } }
 const item = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { type: 'spring', damping: 22, stiffness: 300 } } }
 
-export default function ModulePage({ mod, notes, onBack, onFiche, onNewFiche, onDeleteNote, pinned, onTogglePin, getMasteryLevel }) {
+export default function ModulePage({ mod, notes, onBack, onFiche, onNewFiche, onDeleteNote, pinned, onTogglePin, getMasteryLevel, isAdmin }) {
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('date-desc')
   const [activeTags, setActiveTags] = useState([])
@@ -57,10 +57,12 @@ export default function ModulePage({ mod, notes, onBack, onFiche, onNewFiche, on
           <h2 className="text-xl font-bold" style={{ color: mod.tc, letterSpacing: '-.03em' }}>{mod.label}</h2>
           <p className="text-sm" style={{ color: mod.tc, opacity: .6 }}>{modNotes.length} fiche{modNotes.length !== 1 ? 's' : ''}</p>
         </div>
-        <motion.button whileTap={{ scale: .95 }} onClick={onNewFiche}
-          className="px-4 py-2 rounded-full text-sm font-semibold text-white"
-          style={{ background: mod.color }}
-        >+ Nouvelle</motion.button>
+        {isAdmin && (
+          <motion.button whileTap={{ scale: .95 }} onClick={onNewFiche}
+            className="px-4 py-2 rounded-full text-sm font-semibold text-white"
+            style={{ background: mod.color }}
+          >+ Nouvelle</motion.button>
+        )}
       </div>
 
       {/* Filters */}

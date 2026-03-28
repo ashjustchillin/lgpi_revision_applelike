@@ -20,6 +20,7 @@ export default function HomePage({
   notifPermission, notifSettings, onRequestNotifPermission, onSaveNotifSettings, onTestNotif,
   onImportJSON, onImportFiches,
   getMasteryLevel, masteryStats, srsStats,
+  isAdmin,
 }) {
   const { query, setQuery, results, clear } = useSearch(notes, mods, 200)
   const loading = syncState === 'syncing' && mods.length === 0
@@ -110,16 +111,20 @@ export default function HomePage({
               <motion.button whileTap={{ scale: .95 }} onClick={onRevision}
                 className="btn-accent text-xs"
               >🃏 Revision</motion.button>
-              <motion.button whileTap={{ scale: .95 }} onClick={onAddMod}
-                className="btn-ghost text-xs"
-              >+ Module</motion.button>
+              {isAdmin && (
+                <motion.button whileTap={{ scale: .95 }} onClick={onAddMod}
+                  className="btn-ghost text-xs"
+                >+ Module</motion.button>
+              )}
             </div>
-            <div className="flex items-center gap-2">
-              <NotifSettings permission={notifPermission} settings={notifSettings}
-                onRequestPermission={onRequestNotifPermission}
-                onSaveSettings={onSaveNotifSettings} onTest={onTestNotif} />
-              <DataIO notes={notes} mods={mods} onImport={onImportJSON} onImportFiches={onImportFiches} />
-            </div>
+            {isAdmin && (
+              <div className="flex items-center gap-2">
+                <NotifSettings permission={notifPermission} settings={notifSettings}
+                  onRequestPermission={onRequestNotifPermission}
+                  onSaveSettings={onSaveNotifSettings} onTest={onTestNotif} />
+                <DataIO notes={notes} mods={mods} onImport={onImportJSON} onImportFiches={onImportFiches} />
+              </div>
+            )}
           </div>
 
           {/* Modules grid V2 — layout plus espacé */}
