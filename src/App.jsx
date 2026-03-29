@@ -21,6 +21,9 @@ import { usePageEnter } from './hooks/useGSAP'
 import { useAuth } from './hooks/useAuth'
 import LoginScreen from './components/LoginScreen'
 import PersonalNotesPage from './pages/PersonalNotesPage'
+import AdminDashboard from './pages/AdminDashboard'
+import { useActivityStats } from './hooks/useActivityStats'
+import { ACCOUNTS } from './hooks/useAuth'
 import { collection, addDoc } from 'firebase/firestore'
 import { db } from './lib/firebase'
 
@@ -32,6 +35,7 @@ export default function App() {
   const { permission: notifPermission, settings: notifSettings, requestPermission, saveSettings: saveNotifSettings, sendNotification } = useNotifications()
   const { getLevel, setLevel, updateFromRevision, getMasteryStats, clearMastery } = useMastery()
   const { updateSRS, getDueNotes, getSRSStats, clearSRS } = useSpacedRepetition()
+  const { recordView, getGlobalStats, getMostViewedNotes } = useActivityStats(userId)
   const { role, isAdmin, isLoggedIn, login, logout, error: authError, account, userId } = useAuth()
   const appRef = usePageEnter([])
 
@@ -91,9 +95,10 @@ export default function App() {
   const goModule = id => { setCurMod(id); setPage('module') }
   const goFiche = (id, modId = null) => {
     if (modId) setCurMod(modId)
-    setCurFiche(id); addToHistory(id); setPage('fiche')
+    setCurFiche(id); addToHistory(id); recordView(id, modId); setPage('fiche')
   }
   const goRevision = () => setPage('revision')
+  const goDashboard = () => setPage('dashboard')
   const goPerso = () => setPage('perso')
 
   const currentNote = notes.find(n => n.id === curFiche)
@@ -214,6 +219,7 @@ export default function App() {
                 onTestNotif={() => { sendNotification('LGPI Notes', 'Notification test !'); showToast('Notification envoyee !') }}
                 onImportJSON={handleImportJSON}
                 onImportFiches={handleImportFiches}
+                onDashboard={isAdmin ? goDashboard : null}
                 getMasteryLevel={getLevel}
                 masteryStats={masteryStats}
                 srsStats={srsStats}
@@ -245,6 +251,7 @@ export default function App() {
                 onEdit={isAdmin ? () => { setEditingNote(currentNote); setPage('form') } : null}
                 onDelete={isAdmin ? async () => { await deleteNote(curFiche); showToast('Fiche supprimee'); setPage('module') } : null}
                 onFiche={goFiche} onToast={showToast}
+                account={account}
                 isPinned={isPinned(curFiche)}
                 onTogglePin={() => {
                   const was = isPinned(curFiche); togglePin(curFiche)
@@ -279,6 +286,16 @@ export default function App() {
               <ModFormPage
                 onSave={async data => { await saveMod(data); showToast('Module cree !'); goHome() }}
                 onCancel={goHome}
+              />
+            )}
+
+            {page === 'dashboard' && isAdmin && (
+              <AdminDashboard
+                onBack={goHome}
+                globalStats={getGlobalStats(ACCOUNTS, notes, mods)}
+                mostViewed={getMostViewedNotes(notes, 8)}
+                notes={notes} mods={mods}
+                onFiche={goFiche}
               />
             )}
 

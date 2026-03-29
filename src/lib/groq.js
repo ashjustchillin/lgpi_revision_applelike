@@ -78,3 +78,18 @@ Réponds UNIQUEMENT avec un objet JSON valide (sans markdown, sans backticks) av
   const clean = result.replace(/```json|```/g, '').trim()
   return JSON.parse(clean)
 }
+
+export async function resumerFiche(content, title = '') {
+  const prompt = `Resume cette fiche LGPI en exactement 3 points cles courts (max 15 mots chacun).
+${title ? 'Titre : ' + title : ''}
+
+Contenu :
+${content.slice(0, 800)}
+
+Reponds UNIQUEMENT avec un JSON valide (sans backticks) :
+{"points": ["point 1", "point 2", "point 3"]}`
+
+  const result = await groqCall([{ role: 'user', content: prompt }], 200)
+  const clean = result.replace(/```json|```/g, '').trim()
+  return JSON.parse(clean).points
+}
