@@ -283,7 +283,18 @@ export default function App() {
             )}
 
             {page === 'perso' && (
-              <PersonalNotesPage account={account} onBack={goHome} />
+              <PersonalNotesPage
+                account={account}
+                onBack={goHome}
+                allNotes={notes}
+                mods={mods}
+                onGoFiche={(id, modId) => {
+                  if (modId) setCurMod(modId)
+                  setCurFiche(id)
+                  addToHistory(id)
+                  setPage('fiche')
+                }}
+              />
             )}
 
             {page === 'revision' && (

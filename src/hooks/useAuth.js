@@ -3,11 +3,9 @@ import { useState, useCallback } from 'react'
 const STORAGE_KEY = 'lgpi-auth'
 const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000 // 30 jours
 
-// Comptes — mot de passe = initiales, identifiant = initiales
-// Change les initiales selon tes vrais collegues
 export const ACCOUNTS = {
   admin: {
-    password: 'admin',
+    password: 'lgpi-admin',
     role: 'admin',
     name: 'Admin',
     color: '#6C63FF',
@@ -24,22 +22,22 @@ export const ACCOUNTS = {
     name: 'MB',
     color: '#43D9AD',
   },
-  BO: {
-    password: 'BO',
-    role: 'reader',
-    name: 'BO',
-    color: '#FFB547',
-  },
   SC: {
     password: 'SC',
     role: 'reader',
     name: 'SC',
-    color: '#FF8C42',
+    color: '#FFB547',
   },
   NG: {
     password: 'NG',
     role: 'reader',
     name: 'NG',
+    color: '#FF8C42',
+  },
+  BO: {
+    password: 'BO',
+    role: 'reader',
+    name: 'BO',
     color: '#3B82F6',
   },
 }
