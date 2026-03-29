@@ -20,6 +20,7 @@ import { useSpacedRepetition } from './hooks/useSpacedRepetition'
 import { usePageEnter } from './hooks/useGSAP'
 import { useAuth } from './hooks/useAuth'
 import LoginScreen from './components/LoginScreen'
+import PersonalNotesPage from './pages/PersonalNotesPage'
 import { collection, addDoc } from 'firebase/firestore'
 import { db } from './lib/firebase'
 
@@ -35,6 +36,7 @@ export default function App() {
   const appRef = usePageEnter([])
 
   const [page, setPage] = useState('home')
+  const [prevPage, setPrevPage] = useState('home')
   const [curMod, setCurMod] = useState(null)
   const [curFiche, setCurFiche] = useState(null)
   const [editingNote, setEditingNote] = useState(null)
@@ -92,6 +94,7 @@ export default function App() {
     setCurFiche(id); addToHistory(id); setPage('fiche')
   }
   const goRevision = () => setPage('revision')
+  const goPerso = () => setPage('perso')
 
   const currentNote = notes.find(n => n.id === curFiche)
   const currentMod = mods.find(m => m.id === curMod)
@@ -184,6 +187,8 @@ export default function App() {
           onHome={goHome} onRevision={goRevision}
           isAdmin={isAdmin} onLogout={logout}
           role={role}
+          onPerso={goPerso}
+          account={account}
         />
 
         <AnimatePresence mode="wait">
@@ -277,6 +282,10 @@ export default function App() {
               />
             )}
 
+            {page === 'perso' && (
+              <PersonalNotesPage account={account} onBack={goHome} />
+            )}
+
             {page === 'revision' && (
               <RevisionPage
                 notes={notes} mods={mods}
@@ -296,9 +305,11 @@ export default function App() {
       <BottomNav
         page={page}
         srsCount={srsStats?.due || 0}
+        account={account}
         onNavigate={dest => {
           if (dest === 'home') goHome()
           else if (dest === 'revision') goRevision()
+          else if (dest === 'perso') goPerso()
           else if (dest === 'search') { goHome(); setTimeout(() => document.querySelector('#global-search')?.focus(), 200) }
           else if (dest === 'planning') { goHome(); setTimeout(() => document.querySelector('#planning-section')?.scrollIntoView({ behavior: 'smooth' }), 200) }
         }}

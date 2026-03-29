@@ -123,7 +123,7 @@ export default function LoginScreen({ onLogin, error }) {
           className="text-center text-xs mt-4"
           style={{ color: 'var(--text-3)' }}
         >
-          Contacte l'administrateur pour obtenir un mot de passe
+          Contacte l'administrateur pour obtenir ton mot de passe
         </motion.p>
       </motion.div>
     </div>

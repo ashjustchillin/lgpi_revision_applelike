@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { SyncDot } from './UI'
 import { ACCENT_COLORS } from '../lib/firebase'
 
-export default function Header({ title, syncState, darkMode, onDarkToggle, accent, onAccentChange, onHome, onRevision, isAdmin, onLogout, role }) {
+export default function Header({ title, syncState, darkMode, onDarkToggle, accent, onAccentChange, onHome, onRevision, isAdmin, onLogout, role, onPerso, account }) {
   const [accentOpen, setAccentOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -124,6 +124,20 @@ export default function Header({ title, syncState, darkMode, onDarkToggle, accen
               )}
             </AnimatePresence>
           </div>
+
+          {/* Mes notes */}
+          {onPerso && (
+            <motion.button whileTap={{ scale: .88 }} onClick={onPerso}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+              style={{
+                background: (account?.color || 'var(--accent)') + '22',
+                color: account?.color || 'var(--accent)',
+                border: '1px solid ' + (account?.color || 'var(--accent)') + '44',
+              }}
+            >
+              📝 Mes notes
+            </motion.button>
+          )}
 
           {/* Logout */}
           <motion.button whileTap={{ scale: .88 }} onClick={onLogout}
