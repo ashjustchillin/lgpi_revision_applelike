@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { NavBreadcrumb, BackButton, TypeBadge, ConfirmModal } from '../components/UI'
 import { renderMarkdown, relativeDate, getType } from '../lib/utils'
-import { exportFichePDF } from '../lib/exportPDF'
+import { exportFichePDF } from '../lib/pdf'
 import { MasteryBadge, MasterySelector } from '../components/Mastery'
 import CommentsPanel from '../components/CommentsPanel'
 import { resumerFiche } from '../lib/groq'
@@ -28,7 +28,7 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
   const handleExportPDF = async () => {
     setExporting(true)
     try {
-      await exportFichePDF(note, mod, tp)
+      exportFichePDF(note, mod)
       onToast('PDF exporte !')
     } catch (e) {
       console.error(e)
