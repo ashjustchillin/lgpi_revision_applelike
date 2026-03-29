@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { BackButton } from '../components/UI'
-import { ACCOUNTS } from '../hooks/useAuth'
+import { ACCOUNTS } from '../lib/accounts'
 
 const container = { hidden: {}, show: { transition: { staggerChildren: .06 } } }
 const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }

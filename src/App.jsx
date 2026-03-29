@@ -23,7 +23,7 @@ import LoginScreen from './components/LoginScreen'
 import PersonalNotesPage from './pages/PersonalNotesPage'
 import AdminDashboard from './pages/AdminDashboard'
 import { useActivityStats } from './hooks/useActivityStats'
-import { ACCOUNTS } from './hooks/useAuth'
+import { ACCOUNTS } from './lib/accounts'
 import { collection, addDoc } from 'firebase/firestore'
 import { db } from './lib/firebase'
 
