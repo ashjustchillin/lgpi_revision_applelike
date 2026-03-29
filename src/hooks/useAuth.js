@@ -7,7 +7,7 @@ const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000 // 30 jours
 // Change les initiales selon tes vrais collegues
 export const ACCOUNTS = {
   admin: {
-    password: 'lgpi-admin',
+    password: 'admin',
     role: 'admin',
     name: 'Admin',
     color: '#6C63FF',
