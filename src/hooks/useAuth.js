@@ -12,34 +12,34 @@ export const ACCOUNTS = {
     name: 'Admin',
     color: '#6C63FF',
   },
-  AS: {
-    password: 'AS',
+  JU: {
+    password: 'JU',
     role: 'reader',
-    name: 'AS',
+    name: 'JU',
     color: '#FF6584',
   },
-  BM: {
-    password: 'BM',
+  MB: {
+    password: 'MB',
     role: 'reader',
-    name: 'BM',
+    name: 'MB',
     color: '#43D9AD',
   },
-  CL: {
-    password: 'CL',
+  BO: {
+    password: 'BO',
     role: 'reader',
-    name: 'CL',
+    name: 'BO',
     color: '#FFB547',
   },
-  DR: {
-    password: 'DR',
+  SC: {
+    password: 'SC',
     role: 'reader',
-    name: 'DR',
+    name: 'SC',
     color: '#FF8C42',
   },
-  EP: {
-    password: 'EP',
+  NG: {
+    password: 'NG',
     role: 'reader',
-    name: 'EP',
+    name: 'NG',
     color: '#3B82F6',
   },
 }
