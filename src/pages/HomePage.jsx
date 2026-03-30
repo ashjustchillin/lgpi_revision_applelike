@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from '../lib/motion'
 import { SkeletonTile } from '../components/UI'
 import Planning from '../components/Planning'
 import HistoryPanel from '../components/HistoryPanel'
@@ -20,7 +20,7 @@ export default function HomePage({
   notifPermission, notifSettings, onRequestNotifPermission, onSaveNotifSettings, onTestNotif,
   onImportJSON, onImportFiches,
   getMasteryLevel, masteryStats, srsStats,
-  isAdmin, onDashboard,
+  isAdmin, onDashboard, onZendesk, userId,
 }) {
   const { query, setQuery, results, clear } = useSearch(notes, mods, 200)
   const loading = syncState === 'syncing' && mods.length === 0
@@ -122,7 +122,7 @@ export default function HomePage({
                 <NotifSettings permission={notifPermission} settings={notifSettings}
                   onRequestPermission={onRequestNotifPermission}
                   onSaveSettings={onSaveNotifSettings} onTest={onTestNotif} />
-                <DataIO notes={notes} mods={mods} onImport={onImportJSON} onImportFiches={onImportFiches} />
+                <DataIO notes={notes} mods={mods} onImport={onImportJSON} onZendesk={onZendesk} />
               </div>
             )}
           </div>
@@ -191,7 +191,7 @@ export default function HomePage({
         </>
       )}
 
-      <div id="planning-section"><Planning /></div>
+      <div id="planning-section"><Planning userId={userId} /></div>
 
       <StatsPanel
         stats={stats} streak={streak} last7Days={last7Days}

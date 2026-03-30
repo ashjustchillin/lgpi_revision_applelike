@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from '../lib/motion'
 import { TYPES } from '../lib/firebase'
 import { getType } from '../lib/utils'
 

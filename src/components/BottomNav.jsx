@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion } from '../lib/motion'
 
 export default function BottomNav({ page, onNavigate, srsCount = 0, account }) {
   const NAV_ITEMS = [

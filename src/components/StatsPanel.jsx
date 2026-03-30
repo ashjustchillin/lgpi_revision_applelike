@@ -1,4 +1,4 @@
-import { motion, useSpring, useTransform, animate } from 'framer-motion'
+import { motion, useSpring, useTransform, animate } from '../lib/motion'
 import { useEffect, useRef, useState } from 'react'
 
 function CountUp({ value, suffix = '' }) {
@@ -119,7 +119,7 @@ export default function StatsPanel({ stats, streak, last7Days, globalScore, tota
             </div>
           )}
 
-          {/* Graphique 7 jours */}}
+          {/* Graphique 7 jours */}
           <div className="bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-2xl p-4 mb-4">
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">7 derniers jours</p>
             <div className="flex gap-1 items-end">

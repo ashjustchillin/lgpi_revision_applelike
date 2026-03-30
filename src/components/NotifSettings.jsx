@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from '../lib/motion'
 
 export default function NotifSettings({ permission, settings, onRequestPermission, onSaveSettings, onTest }) {
   const [localTime, setLocalTime] = useState(settings.time || '09:00')

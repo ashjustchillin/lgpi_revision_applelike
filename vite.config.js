@@ -6,5 +6,21 @@ export default defineConfig({
   root: '.',
   build: {
     outDir: 'dist',
+    target: 'es2020',
+    commonjsOptions: {
+      include: [/node_modules/],
+    },
+  },
+  optimizeDeps: {
+    include: [
+      'firebase/app',
+      'firebase/firestore',
+    ],
+    esbuildOptions: {
+      target: 'es2020',
+    },
+  },
+  resolve: {
+    alias: {},
   },
 })

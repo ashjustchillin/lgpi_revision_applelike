@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion } from './lib/motion'
 import Header from './components/Header'
 import { Toast } from './components/UI'
 import HomePage from './pages/HomePage'
@@ -22,6 +22,7 @@ import { useAuth } from './hooks/useAuth'
 import LoginScreen from './components/LoginScreen'
 import PersonalNotesPage from './pages/PersonalNotesPage'
 import AdminDashboard from './pages/AdminDashboard'
+import ZendeskPage from './pages/ZendeskPage'
 import { useActivityStats } from './hooks/useActivityStats'
 import { ACCOUNTS } from './lib/accounts'
 import { collection, addDoc } from 'firebase/firestore'
@@ -35,8 +36,8 @@ export default function App() {
   const { permission: notifPermission, settings: notifSettings, requestPermission, saveSettings: saveNotifSettings, sendNotification } = useNotifications()
   const { getLevel, setLevel, updateFromRevision, getMasteryStats, clearMastery } = useMastery()
   const { updateSRS, getDueNotes, getSRSStats, clearSRS } = useSpacedRepetition()
-  const { recordView, getGlobalStats, getMostViewedNotes } = useActivityStats(userId)
   const { role, isAdmin, isLoggedIn, login, logout, error: authError, account, userId } = useAuth()
+  const { recordView, getGlobalStats, getMostViewedNotes } = useActivityStats(userId)
   const appRef = usePageEnter([])
 
   const [page, setPage] = useState('home')
@@ -99,6 +100,7 @@ export default function App() {
   }
   const goRevision = () => setPage('revision')
   const goDashboard = () => setPage('dashboard')
+  const goZendesk = () => setPage('zendesk')
   const goPerso = () => setPage('perso')
 
   const currentNote = notes.find(n => n.id === curFiche)
@@ -182,7 +184,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen transition-colors duration-500" style={{ background: darkMode ? '#0a0a0a' : '#f5f5f7' }}>
+    <div className="min-h-screen transition-colors duration-500" style={{ background: darkMode ? '#0d1117' : '#f5f5f7' }}>
       {page === 'home' && <ParticleBackground darkMode={darkMode} />}
       <div ref={appRef} className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 sm:pb-8 relative z-10">
         <Header
@@ -220,6 +222,8 @@ export default function App() {
                 onImportJSON={handleImportJSON}
                 onImportFiches={handleImportFiches}
                 onDashboard={isAdmin ? goDashboard : null}
+                onZendesk={isAdmin ? goZendesk : null}
+                userId={userId}
                 getMasteryLevel={getLevel}
                 masteryStats={masteryStats}
                 srsStats={srsStats}
@@ -286,6 +290,14 @@ export default function App() {
               <ModFormPage
                 onSave={async data => { await saveMod(data); showToast('Module cree !'); goHome() }}
                 onCancel={goHome}
+              />
+            )}
+
+            {page === 'zendesk' && isAdmin && (
+              <ZendeskPage
+                onBack={goHome}
+                mods={mods}
+                onImportFiche={handleImportFiches}
               />
             )}
 
