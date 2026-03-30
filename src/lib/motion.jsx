@@ -1,20 +1,9 @@
-// Shim framer-motion leger - animations CSS pures, meme API
 import { useEffect, useRef, forwardRef } from 'react'
 
-// Convertit les props motion en style CSS
-function getAnimStyle(animate, initial, transition) {
-  const dur = transition?.duration ?? 0.2
-  const ease = transition?.ease === 'easeOut' ? 'ease-out'
-    : transition?.type === 'spring' ? 'cubic-bezier(.32,1,.28,1)'
-    : 'ease'
-  return {
-    transition: `opacity ${dur}s ${ease}, transform ${dur}s ${ease}, height ${dur}s ${ease}`,
-  }
-}
-
+// ── HELPERS ───────────────────────────────────────────────
 function applyState(el, state) {
   if (!el || !state) return
-  if (state.opacity !== undefined) el.style.opacity = state.opacity
+  if (state.opacity !== undefined) el.style.opacity = String(state.opacity)
   if (state.y !== undefined) el.style.transform = `translateY(${state.y}px)`
   if (state.x !== undefined) el.style.transform = `translateX(${state.x}px)`
   if (state.scale !== undefined) el.style.transform = `scale(${state.scale})`
@@ -22,80 +11,90 @@ function applyState(el, state) {
   if (state.height !== undefined) el.style.height = typeof state.height === 'number' ? state.height + 'px' : state.height
 }
 
-// Composant motion generique
-function createMotion(Tag) {
-  return forwardRef(function MotionEl({
-    initial, animate, exit, whileHover, whileTap, whileFocus,
-    transition, variants, layout, layoutId,
-    children, style, className, onClick, onMouseEnter, onMouseLeave,
-    ...rest
-  }, ref) {
+function getTransition(transition) {
+  const dur = transition?.duration ?? 0.2
+  const ease = transition?.type === 'spring' ? 'cubic-bezier(.32,1,.28,1)' : 'ease-out'
+  return `opacity ${dur}s ${ease}, transform ${dur}s ${ease}, height ${dur}s ${ease}, box-shadow ${dur}s ${ease}`
+}
+
+function getInitStyle(initial) {
+  if (!initial) return {}
+  const s = {}
+  if (initial.opacity !== undefined) s.opacity = initial.opacity
+  if (initial.y !== undefined) s.transform = `translateY(${initial.y}px)`
+  if (initial.x !== undefined) s.transform = `translateX(${initial.x}px)`
+  if (initial.scale !== undefined) s.transform = `scale(${initial.scale})`
+  if (initial.height !== undefined) s.height = typeof initial.height === 'number' ? initial.height + 'px' : initial.height
+  return s
+}
+
+// ── FACTORY ───────────────────────────────────────────────
+function createMotionComponent(Tag) {
+  const Component = forwardRef(function MotionEl(props, ref) {
+    const {
+      initial, animate, exit, whileHover, whileTap,
+      transition, variants, layout, layoutId,
+      children, style, className, onClick,
+      onMouseEnter, onMouseLeave,
+      ...rest
+    } = props
+
     const elRef = useRef(null)
-    const combinedRef = ref || elRef
+    const resolvedRef = ref || elRef
 
     useEffect(() => {
-      const el = combinedRef.current
-      if (!el) return
-      if (initial) applyState(el, initial)
-      const tid = requestAnimationFrame(() => {
-        if (animate) {
-          Object.assign(el.style, getAnimStyle(animate, initial, transition))
-          applyState(el, animate)
-        }
-      })
-      return () => cancelAnimationFrame(tid)
+      const el = resolvedRef.current
+      if (!el || !animate) return
+      el.style.transition = getTransition(transition)
+      const id = requestAnimationFrame(() => applyState(el, animate))
+      return () => cancelAnimationFrame(id)
     }, [JSON.stringify(animate)])
 
-    const handleMouseEnter = (e) => {
+    function handleMouseEnter(e) {
       if (whileHover) {
-        const el = combinedRef.current
+        const el = resolvedRef.current
         if (el) {
           el.style.transition = 'transform .15s ease, box-shadow .15s ease, opacity .15s ease'
           applyState(el, whileHover)
           if (whileHover.boxShadow) el.style.boxShadow = whileHover.boxShadow
-          if (whileHover.y !== undefined) el.style.transform = `translateY(${whileHover.y}px)`
         }
       }
-      onMouseEnter?.(e)
+      if (onMouseEnter) onMouseEnter(e)
     }
 
-    const handleMouseLeave = (e) => {
+    function handleMouseLeave(e) {
       if (whileHover && animate) {
-        const el = combinedRef.current
+        const el = resolvedRef.current
         if (el) {
           applyState(el, animate)
           if (animate.boxShadow !== undefined) el.style.boxShadow = animate.boxShadow || ''
         }
       }
-      onMouseLeave?.(e)
+      if (onMouseLeave) onMouseLeave(e)
     }
 
-    const handleMouseDown = (e) => {
+    function handleMouseDown() {
       if (whileTap) {
-        const el = combinedRef.current
-        if (el) applyState(el, whileTap)
+        const el = resolvedRef.current
+        if (el) {
+          el.style.transition = 'transform .1s ease'
+          applyState(el, whileTap)
+        }
       }
     }
 
-    const handleMouseUp = (e) => {
+    function handleMouseUp() {
       if (whileTap && animate) {
-        const el = combinedRef.current
+        const el = resolvedRef.current
         if (el) applyState(el, animate)
       }
     }
 
-    const initStyle = {}
-    if (initial) {
-      if (initial.opacity !== undefined) initStyle.opacity = initial.opacity
-      if (initial.y !== undefined) initStyle.transform = `translateY(${initial.y}px)`
-      if (initial.x !== undefined) initStyle.transform = `translateX(${initial.x}px)`
-      if (initial.scale !== undefined) initStyle.transform = `scale(${initial.scale})`
-      if (initial.height !== undefined) initStyle.height = typeof initial.height === 'number' ? initial.height + 'px' : initial.height
-    }
+    const initStyle = getInitStyle(initial)
 
     return (
       <Tag
-        ref={combinedRef}
+        ref={resolvedRef}
         className={className}
         style={{ ...initStyle, ...style }}
         onClick={onClick}
@@ -109,66 +108,80 @@ function createMotion(Tag) {
       </Tag>
     )
   })
+  Component.displayName = 'Motion(' + Tag + ')'
+  return Component
 }
 
-// AnimatePresence - rend juste les enfants
-export function AnimatePresence({ children, mode }) {
+// ── EXPORTS PRINCIPAUX ────────────────────────────────────
+// IMPORTANT: definir AVANT tout usage
+
+export const motion = {
+  div: createMotionComponent('div'),
+  button: createMotionComponent('button'),
+  span: createMotionComponent('span'),
+  p: createMotionComponent('p'),
+  header: createMotionComponent('header'),
+  nav: createMotionComponent('nav'),
+  section: createMotionComponent('section'),
+  article: createMotionComponent('article'),
+  aside: createMotionComponent('aside'),
+  ul: createMotionComponent('ul'),
+  li: createMotionComponent('li'),
+  h1: createMotionComponent('h1'),
+  h2: createMotionComponent('h2'),
+  h3: createMotionComponent('h3'),
+  form: createMotionComponent('form'),
+  a: createMotionComponent('a'),
+  img: createMotionComponent('img'),
+  label: createMotionComponent('label'),
+}
+
+export function AnimatePresence({ children }) {
   return children
 }
 
-// motion object avec tous les tags HTML courants
-export const motion = {
-  div: createMotion('div'),
-  button: createMotion('button'),
-  span: createMotion('span'),
-  p: createMotion('p'),
-  header: createMotion('header'),
-  nav: createMotion('nav'),
-  section: createMotion('section'),
-  article: createMotion('article'),
-  aside: createMotion('aside'),
-  ul: createMotion('ul'),
-  li: createMotion('li'),
-  h1: createMotion('h1'),
-  h2: createMotion('h2'),
-  h3: createMotion('h3'),
-  form: createMotion('form'),
-  input: createMotion('input'),
-  label: createMotion('label'),
-  img: createMotion('img'),
-  a: createMotion('a'),
-}
-
-export function useAnimation() {
-  return { start: () => {}, stop: () => {} }
-}
-
-export function useMotionValue(v) {
-  return { get: () => v, set: () => {}, onChange: () => () => {} }
+// ── HOOKS ─────────────────────────────────────────────────
+export function useMotionValue(initial) {
+  const ref = useRef(initial)
+  return {
+    get: () => ref.current,
+    set: (v) => { ref.current = v },
+    onChange: () => () => {},
+  }
 }
 
 export function useTransform(val, input, output) {
-  return { get: () => output[0] }
+  return { get: () => output[0], onChange: () => () => {} }
 }
 
-// Exports supplementaires pour compatibilite
-export function animate(from, to, options) {
-  return { stop: () => {}, then: (cb) => { cb && cb(); return Promise.resolve() } }
-}
-
-export function useSpring(value, config) {
+export function useSpring(value) {
   return { get: () => (typeof value === 'number' ? value : 0), set: () => {}, onChange: () => () => {} }
+}
+
+export function useAnimation() {
+  return { start: () => Promise.resolve(), stop: () => {} }
 }
 
 export function useDragControls() {
   return { start: () => {} }
 }
 
-export function useInView(ref, options) {
+export function useInView() {
   return true
 }
 
-export const MotionConfig = ({ children }) => children
-export const LazyMotion = ({ children }) => children
+// ── MISC ──────────────────────────────────────────────────
+export function animate(from, to, options) {
+  return { stop: () => {}, then: (cb) => { if (cb) cb(); return Promise.resolve() } }
+}
+
+export function MotionConfig({ children }) {
+  return children
+}
+
+export function LazyMotion({ children }) {
+  return children
+}
+
 export const domAnimation = {}
 export const domMax = {}
