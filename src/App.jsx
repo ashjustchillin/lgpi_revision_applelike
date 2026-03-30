@@ -35,8 +35,8 @@ export default function App() {
   const { permission: notifPermission, settings: notifSettings, requestPermission, saveSettings: saveNotifSettings, sendNotification } = useNotifications()
   const { getLevel, setLevel, updateFromRevision, getMasteryStats, clearMastery } = useMastery()
   const { updateSRS, getDueNotes, getSRSStats, clearSRS } = useSpacedRepetition()
-  const { recordView, getGlobalStats, getMostViewedNotes } = useActivityStats(userId)
   const { role, isAdmin, isLoggedIn, login, logout, error: authError, account, userId } = useAuth()
+  const { recordView, getGlobalStats, getMostViewedNotes } = useActivityStats(userId)
   const appRef = usePageEnter([])
 
   const [page, setPage] = useState('home')
