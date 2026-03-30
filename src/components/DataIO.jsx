@@ -5,7 +5,8 @@ import { exportJSON, importJSON } from '../lib/dataIO'
 export default function DataIO({ notes, mods, onImport, onImportFiches }) {
   const [open, setOpen] = useState(false)
   const [importing, setImporting] = useState(false)
-  const [importResult, setImportResult] = useState(null)  const fileRef = useRef(null)
+  const [importResult, setImportResult] = useState(null)
+  const fileRef = useRef(null)
 
   const handleExport = () => { exportJSON(notes, mods); setOpen(false) }
 
