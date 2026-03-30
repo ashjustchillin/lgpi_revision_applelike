@@ -22,6 +22,7 @@ import { useAuth } from './hooks/useAuth'
 import LoginScreen from './components/LoginScreen'
 import PersonalNotesPage from './pages/PersonalNotesPage'
 import AdminDashboard from './pages/AdminDashboard'
+import ZendeskPage from './pages/ZendeskPage'
 import { useActivityStats } from './hooks/useActivityStats'
 import { ACCOUNTS } from './lib/accounts'
 import { collection, addDoc } from 'firebase/firestore'
@@ -99,6 +100,7 @@ export default function App() {
   }
   const goRevision = () => setPage('revision')
   const goDashboard = () => setPage('dashboard')
+  const goZendesk = () => setPage('zendesk')
   const goPerso = () => setPage('perso')
 
   const currentNote = notes.find(n => n.id === curFiche)
@@ -220,6 +222,7 @@ export default function App() {
                 onImportJSON={handleImportJSON}
                 onImportFiches={handleImportFiches}
                 onDashboard={isAdmin ? goDashboard : null}
+                onZendesk={isAdmin ? goZendesk : null}
                 getMasteryLevel={getLevel}
                 masteryStats={masteryStats}
                 srsStats={srsStats}
@@ -286,6 +289,14 @@ export default function App() {
               <ModFormPage
                 onSave={async data => { await saveMod(data); showToast('Module cree !'); goHome() }}
                 onCancel={goHome}
+              />
+            )}
+
+            {page === 'zendesk' && isAdmin && (
+              <ZendeskPage
+                onBack={goHome}
+                mods={mods}
+                onImportFiche={handleImportFiches}
               />
             )}
 

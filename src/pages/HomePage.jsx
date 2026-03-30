@@ -20,7 +20,7 @@ export default function HomePage({
   notifPermission, notifSettings, onRequestNotifPermission, onSaveNotifSettings, onTestNotif,
   onImportJSON, onImportFiches,
   getMasteryLevel, masteryStats, srsStats,
-  isAdmin, onDashboard,
+  isAdmin, onDashboard, onZendesk,
 }) {
   const { query, setQuery, results, clear } = useSearch(notes, mods, 200)
   const loading = syncState === 'syncing' && mods.length === 0

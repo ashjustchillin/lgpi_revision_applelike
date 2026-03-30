@@ -1,14 +1,11 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from '../lib/motion'
 import { exportJSON, importJSON } from '../lib/dataIO'
-import ZendeskImport from './ZendeskImport'
 
 export default function DataIO({ notes, mods, onImport, onImportFiches }) {
   const [open, setOpen] = useState(false)
   const [importing, setImporting] = useState(false)
-  const [importResult, setImportResult] = useState(null)
-  const [showZendesk, setShowZendesk] = useState(false)
-  const fileRef = useRef(null)
+  const [importResult, setImportResult] = useState(null)  const fileRef = useRef(null)
 
   const handleExport = () => { exportJSON(notes, mods); setOpen(false) }
 
