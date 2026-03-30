@@ -150,3 +150,25 @@ export function useMotionValue(v) {
 export function useTransform(val, input, output) {
   return { get: () => output[0] }
 }
+
+// Exports supplementaires pour compatibilite
+export function animate(from, to, options) {
+  return { stop: () => {}, then: (cb) => { cb && cb(); return Promise.resolve() } }
+}
+
+export function useSpring(value, config) {
+  return { get: () => (typeof value === 'number' ? value : 0), set: () => {}, onChange: () => () => {} }
+}
+
+export function useDragControls() {
+  return { start: () => {} }
+}
+
+export function useInView(ref, options) {
+  return true
+}
+
+export const MotionConfig = ({ children }) => children
+export const LazyMotion = ({ children }) => children
+export const domAnimation = {}
+export const domMax = {}
