@@ -6,5 +6,12 @@ export default defineConfig({
   root: '.',
   build: {
     outDir: 'dist',
+    target: 'es2015',
+    rollupOptions: {
+      output: {
+        format: 'iife',
+        inlineDynamicImports: true,
+      }
+    }
   },
 })
