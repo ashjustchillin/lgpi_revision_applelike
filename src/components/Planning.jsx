@@ -127,12 +127,13 @@ export default function Planning() {
           <span className="text-xs font-semibold text-gray-700 dark:text-zinc-300">{progressPct}%</span>
         </div>
         <div className="h-1.5 bg-gray-100 dark:bg-zinc-700 rounded-full overflow-hidden">
-          <motion.div
+          <div
             className="h-full rounded-full"
-            style={{ background: 'linear-gradient(90deg, var(--accent), #43D9AD)' }}
-            initial={{ width: 0 }}
-            animate={{ width: `${progressPct}%` }}
-            transition={{ duration: .9, ease: 'easeOut' }}
+            style={{
+              background: 'linear-gradient(90deg, var(--accent), #43D9AD)',
+              width: `${progressPct}%`,
+              transition: 'width 0.9s ease-out',
+            }}
           />
         </div>
         {hoursLeft && <p className="text-right text-xs text-gray-400 mt-1.5">{hoursLeft}</p>}
@@ -154,11 +155,13 @@ export default function Planning() {
         </div>
         {/* Mini barre */}
         <div className="h-1 bg-gray-100 dark:bg-zinc-700 rounded-full overflow-hidden mt-3">
-          <motion.div
+          <div
             className="h-full rounded-full"
-            style={{ background: 'linear-gradient(90deg, var(--accent), #43D9AD)' }}
-            animate={{ width: `${miniBarPct}%` }}
-            transition={{ duration: .9 }}
+            style={{
+              background: 'linear-gradient(90deg, var(--accent), #43D9AD)',
+              width: `${miniBarPct}%`,
+              transition: 'width 0.9s ease',
+            }}
           />
         </div>
         {nextInfo && <p className="text-xs text-gray-400 mt-1.5">{nextInfo}</p>}
@@ -198,11 +201,13 @@ export default function Planning() {
                 <p className="text-[11px] text-gray-400 mt-1.5">{day.total}</p>
                 {day.isToday && (
                   <div className="h-0.5 bg-gray-100 dark:bg-zinc-700 rounded-full overflow-hidden mt-1.5">
-                    <motion.div
+                    <div
                       className="h-full rounded-full"
-                      style={{ background: day.color }}
-                      animate={{ width: `${day.dayProgressPct}%` }}
-                      transition={{ duration: .9 }}
+                      style={{
+                        background: day.color,
+                        width: `${day.dayProgressPct}%`,
+                        transition: 'width 0.9s ease',
+                      }}
                     />
                   </div>
                 )}

@@ -9,6 +9,10 @@ function applyState(el, state) {
   if (state.scale !== undefined) el.style.transform = `scale(${state.scale})`
   if (state.rotate !== undefined) el.style.transform = `rotate(${state.rotate}deg)`
   if (state.height !== undefined) el.style.height = typeof state.height === 'number' ? state.height + 'px' : state.height
+  if (state.boxShadow !== undefined) el.style.boxShadow = state.boxShadow
+  if (state.borderColor !== undefined) el.style.borderColor = state.borderColor
+  if (state.color !== undefined) el.style.color = state.color
+  if (state.background !== undefined) el.style.background = state.background
 }
 
 function getTransition(transition) {
@@ -41,6 +45,8 @@ function createMotionComponent(Tag) {
 
     const elRef = useRef(null)
     const resolvedRef = ref || elRef
+    // Sauvegarder les styles originaux avant hover
+    const savedStyles = useRef({})
 
     useEffect(() => {
       const el = resolvedRef.current
@@ -53,21 +59,39 @@ function createMotionComponent(Tag) {
     function handleMouseEnter(e) {
       if (whileHover) {
         const el = resolvedRef.current
-        if (el) {
-          el.style.transition = 'transform .15s ease, box-shadow .15s ease, opacity .15s ease'
-          applyState(el, whileHover)
-          if (whileHover.boxShadow) el.style.boxShadow = whileHover.boxShadow
+        if (!el) return
+        // Sauvegarder les styles actuels avant de modifier
+        savedStyles.current = {
+          transform: el.style.transform || '',
+          boxShadow: el.style.boxShadow || '',
+          borderColor: el.style.borderColor || '',
+          color: el.style.color || '',
+          background: el.style.background || '',
+          opacity: el.style.opacity || '',
         }
+        el.style.transition = 'transform .15s ease, box-shadow .15s ease, opacity .15s ease, border-color .15s ease, color .15s ease'
+        applyState(el, whileHover)
       }
       if (onMouseEnter) onMouseEnter(e)
     }
 
     function handleMouseLeave(e) {
-      if (whileHover && animate) {
+      if (whileHover) {
         const el = resolvedRef.current
-        if (el) {
+        if (!el) return
+        el.style.transition = 'transform .15s ease, box-shadow .15s ease, opacity .15s ease, border-color .15s ease, color .15s ease'
+        // Restaurer depuis animate si disponible, sinon depuis les styles sauvegardés
+        if (animate) {
           applyState(el, animate)
-          if (animate.boxShadow !== undefined) el.style.boxShadow = animate.boxShadow || ''
+        } else {
+          // Restaurer les styles originaux
+          const s = savedStyles.current
+          el.style.transform = s.transform
+          el.style.boxShadow = s.boxShadow
+          el.style.borderColor = s.borderColor
+          el.style.color = s.color
+          el.style.background = s.background
+          el.style.opacity = s.opacity
         }
       }
       if (onMouseLeave) onMouseLeave(e)
@@ -84,9 +108,17 @@ function createMotionComponent(Tag) {
     }
 
     function handleMouseUp() {
-      if (whileTap && animate) {
+      if (whileTap) {
         const el = resolvedRef.current
-        if (el) applyState(el, animate)
+        if (!el) return
+        el.style.transition = 'transform .15s ease'
+        if (animate) {
+          applyState(el, animate)
+        } else {
+          const s = savedStyles.current
+          el.style.transform = s.transform
+          el.style.opacity = s.opacity
+        }
       }
     }
 
@@ -113,8 +145,6 @@ function createMotionComponent(Tag) {
 }
 
 // ── EXPORTS PRINCIPAUX ────────────────────────────────────
-// IMPORTANT: definir AVANT tout usage
-
 export const motion = {
   div: createMotionComponent('div'),
   button: createMotionComponent('button'),
