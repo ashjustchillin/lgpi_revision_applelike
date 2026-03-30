@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
+import { motion, AnimatePresence, useMotionValue, useTransform } from '../lib/motion'
 import { NavBreadcrumb, BackButton } from '../components/UI'
 import { getType } from '../lib/utils'
 import { MasteryBadge } from '../components/Mastery'

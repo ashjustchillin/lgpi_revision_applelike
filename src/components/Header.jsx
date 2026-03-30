@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from '../lib/motion'
 import { SyncDot } from './UI'
 import { ACCENT_COLORS } from '../lib/firebase'
 

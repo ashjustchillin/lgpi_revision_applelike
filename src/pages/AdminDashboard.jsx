@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion } from '../lib/motion'
 import { BackButton } from '../components/UI'
 import { ACCOUNTS } from '../lib/accounts'
 

@@ -1,4 +1,4 @@
-import { motion, useSpring, useTransform, animate } from 'framer-motion'
+import { motion, useSpring, useTransform, animate } from '../lib/motion'
 import { useEffect, useRef, useState } from 'react'
 
 function CountUp({ value, suffix = '' }) {

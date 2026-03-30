@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion } from './lib/motion'
 import Header from './components/Header'
 import { Toast } from './components/UI'
 import HomePage from './pages/HomePage'

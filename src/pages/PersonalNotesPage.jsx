@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from '../lib/motion'
 import { BackButton, ConfirmModal } from '../components/UI'
 import { usePersonalNotes } from '../hooks/usePersonalNotes'
 import { renderMarkdown } from '../lib/utils'

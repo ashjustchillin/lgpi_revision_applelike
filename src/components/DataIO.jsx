@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from '../lib/motion'
 import { exportJSON, importJSON } from '../lib/dataIO'
 import ZendeskImport from './ZendeskImport'
 

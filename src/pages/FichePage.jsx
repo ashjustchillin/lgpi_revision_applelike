@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from '../lib/motion'
 import { NavBreadcrumb, BackButton, TypeBadge, ConfirmModal } from '../components/UI'
 import { renderMarkdown, relativeDate, getType } from '../lib/utils'
 import { exportFichePDF } from '../lib/pdf'

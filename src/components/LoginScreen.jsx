@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion } from '../lib/motion'
 
 export default function LoginScreen({ onLogin, error }) {
   const [password, setPassword] = useState('')

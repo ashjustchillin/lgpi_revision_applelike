@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from '../lib/motion'
 import { SkeletonTile } from '../components/UI'
 import Planning from '../components/Planning'
 import HistoryPanel from '../components/HistoryPanel'

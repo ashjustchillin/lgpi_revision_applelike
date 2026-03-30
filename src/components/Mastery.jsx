@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion } from '../lib/motion'
 import { MASTERY_LEVELS } from '../hooks/useMastery'
 
 export function MasteryBadge({ level, size = 'sm', onClick }) {

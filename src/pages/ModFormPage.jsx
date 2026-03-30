@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion } from '../lib/motion'
 import { NavBreadcrumb, BackButton } from '../components/UI'
 import { EMOJIS, COLORS } from '../lib/firebase'
 

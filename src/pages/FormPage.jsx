@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from '../lib/motion'
 import { NavBreadcrumb, BackButton, Chip } from '../components/UI'
 import { TYPES } from '../lib/firebase'
 import { todayStr } from '../lib/utils'

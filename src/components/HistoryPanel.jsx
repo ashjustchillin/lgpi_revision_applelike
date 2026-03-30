@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion'
+import { motion } from '../lib/motion'
 import { getType, relativeDate } from '../lib/utils'
 
 export default function HistoryPanel({ history, notes, mods, onFiche }) {
