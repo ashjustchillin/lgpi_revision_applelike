@@ -122,7 +122,7 @@ export default function HomePage({
                 <NotifSettings permission={notifPermission} settings={notifSettings}
                   onRequestPermission={onRequestNotifPermission}
                   onSaveSettings={onSaveNotifSettings} onTest={onTestNotif} />
-                <DataIO notes={notes} mods={mods} onImport={onImportJSON} onImportFiches={onImportFiches} />
+                <DataIO notes={notes} mods={mods} onImport={onImportJSON} onZendesk={onZendesk} />
               </div>
             )}
           </div>
