@@ -9,8 +9,8 @@ const STATUS_CLASSES = {
   weekend: 'status-weekend',
 }
 
-export default function Planning() {
-  const { planningData, schedule, updateSchedule } = usePlanning()
+export default function Planning({ userId }) {
+  const { planningData, schedule, updateSchedule } = usePlanning(userId)
   const [showSettings, setShowSettings] = useState(false)
   const [localSchedule, setLocalSchedule] = useState(null)
 

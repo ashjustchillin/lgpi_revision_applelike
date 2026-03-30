@@ -184,7 +184,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen transition-colors duration-500" style={{ background: darkMode ? '#0a0a0a' : '#f5f5f7' }}>
+    <div className="min-h-screen transition-colors duration-500" style={{ background: darkMode ? '#0d1117' : '#f5f5f7' }}>
       {page === 'home' && <ParticleBackground darkMode={darkMode} />}
       <div ref={appRef} className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 sm:pb-8 relative z-10">
         <Header
@@ -223,6 +223,7 @@ export default function App() {
                 onImportFiches={handleImportFiches}
                 onDashboard={isAdmin ? goDashboard : null}
                 onZendesk={isAdmin ? goZendesk : null}
+                userId={userId}
                 getMasteryLevel={getLevel}
                 masteryStats={masteryStats}
                 srsStats={srsStats}

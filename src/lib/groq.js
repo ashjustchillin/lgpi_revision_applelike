@@ -51,32 +51,53 @@ Contenu : ${content.slice(0, 400)}`
   return result.split(',').map(t => t.trim().toLowerCase()).filter(Boolean).slice(0, 5)
 }
 
+// Nettoyer un JSON potentiellement mal forme retourne par l'IA
+function safeParseJSON(raw) {
+  let clean = raw.replace(/```json|```/g, '').trim()
+  const start = clean.indexOf('{')
+  const end = clean.lastIndexOf('}')
+  if (start >= 0 && end > start) clean = clean.slice(start, end + 1)
+  try { return JSON.parse(clean) } catch {}
+
+  // Fallback : extraire les champs manuellement
+  const extract = (key) => {
+    const m = clean.match(new RegExp('"' + key + '"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"', 's'))
+    return m ? m[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') : ''
+  }
+  const extractArr = (key) => {
+    const m = clean.match(new RegExp('"' + key + '"\\s*:\\s*\\[([^\\]]*)\\]'))
+    if (!m) return []
+    return (m[1].match(/"([^"]*)"/g) || []).map(s => s.replace(/"/g, ''))
+  }
+  return {
+    title: extract('title') || 'Ticket Zendesk',
+    type: extract('type') || 'info',
+    module: extract('module') || '',
+    path: extract('path') || '',
+    content: extract('content') || '',
+    tags: extractArr('tags'),
+  }
+}
+
 // Convertir un ticket Zendesk en fiche LGPI
 export async function zendeckTicketToFiche(ticket, existingMods = []) {
-  const prompt = `Tu es un expert du logiciel de gestion LGPI. Analyse ce ticket de support Zendesk et transforme-le en fiche de connaissance structurée.
+  const cleanText = (str) => (str || '').slice(0, 800)
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\\/g, '/')
 
-Ticket Zendesk :
-- Sujet : ${ticket.subject || ''}
-- Description : ${(ticket.description || '').slice(0, 800)}
-- Solution/Résolution : ${(ticket.resolution || ticket.comments || '').slice(0, 600)}
-- Tags Zendesk : ${(ticket.tags || '').slice(0, 100)}
-
-Modules LGPI disponibles : ${existingMods.map(m => m.label).join(', ') || 'Gestion de stock, Facturation, Télétransmission, Données Clients, Données Opérateurs, Sérialisation, Crédits'}
-
-Réponds UNIQUEMENT avec un objet JSON valide (sans markdown, sans backticks) avec exactement ces champs :
-{
-  "title": "titre court et précis (max 8 mots)",
-  "type": "procedure ou attention ou astuce ou info",
-  "module": "nom exact du module le plus pertinent parmi ceux disponibles",
-  "path": "chemin dans LGPI si détectable (ex: Stock > Inventaires) sinon vide",
-  "content": "contenu structuré en markdown avec ## sections, - listes, **gras**",
-  "tags": ["tag1", "tag2", "tag3"]
-}`
+  const prompt = "Tu es un expert du logiciel de gestion LGPI. Convertis ce ticket Zendesk en fiche de connaissance.\n\n" +
+    "TICKET :\n" +
+    "Sujet : " + cleanText(ticket.subject) + "\n" +
+    "Description : " + cleanText(ticket.description) + "\n" +
+    "Contenu : " + cleanText(ticket.manualContent || ticket.comments || ticket.resolution) + "\n" +
+    "Tags : " + (ticket.tags || '').slice(0, 100) + "\n\n" +
+    "Modules disponibles : " + (existingMods.map(m => m.label).join(', ') || 'Gestion de stock, Facturation, Teletransmission, Donnees Clients, Serialisation') + "\n\n" +
+    'Reponds UNIQUEMENT avec du JSON valide sur une seule ligne, sans markdown ni backticks.\n' +
+    'Utilise \\n pour les sauts de ligne dans "content".\n' +
+    '{"title":"max 8 mots","type":"procedure|attention|astuce|info","module":"module exact","path":"chemin ou vide","content":"markdown avec \\n","tags":["tag1","tag2"]}'
 
   const result = await groqCall([{ role: 'user', content: prompt }], 1200)
-  // Nettoyer et parser le JSON
-  const clean = result.replace(/```json|```/g, '').trim()
-  return JSON.parse(clean)
+  return safeParseJSON(result)
 }
 
 export async function resumerFiche(content, title = '') {

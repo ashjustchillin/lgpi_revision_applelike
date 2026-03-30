@@ -20,7 +20,7 @@ export default function HomePage({
   notifPermission, notifSettings, onRequestNotifPermission, onSaveNotifSettings, onTestNotif,
   onImportJSON, onImportFiches,
   getMasteryLevel, masteryStats, srsStats,
-  isAdmin, onDashboard, onZendesk,
+  isAdmin, onDashboard, onZendesk, userId,
 }) {
   const { query, setQuery, results, clear } = useSearch(notes, mods, 200)
   const loading = syncState === 'syncing' && mods.length === 0
@@ -191,7 +191,7 @@ export default function HomePage({
         </>
       )}
 
-      <div id="planning-section"><Planning /></div>
+      <div id="planning-section"><Planning userId={userId} /></div>
 
       <StatsPanel
         stats={stats} streak={streak} last7Days={last7Days}
