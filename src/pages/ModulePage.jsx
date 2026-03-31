@@ -2,10 +2,9 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from '../lib/motion'
 import { NavBreadcrumb, BackButton, TypeBadge, SkeletonCard, ConfirmModal, ViewToggle } from '../components/UI'
 import { getType, relativeDate } from '../lib/utils'
-import { resumeModule } from '../lib/groq'
+import { resumerModule } from '../lib/groq'
 import { MasteryBadge } from '../components/Mastery'
 import { useSwipe } from '../hooks/useSwipe'
-import { resumerModule } from '../lib/groq'
 
 const SORT_OPTIONS = [
   { value: 'date-desc', label: 'Recentes' },
@@ -58,7 +57,7 @@ export default function ModulePage({ mod, notes, onBack, onFiche, onNewFiche, on
     if (moduleResume) { setModuleResume(null); return }
     setResumeLoading(true)
     try {
-      const text = await resumeModule(modNotes, mod.label)
+      const text = await resumerModule(modNotes, mod.label)
       setModuleResume(text)
     } catch {}
     setResumeLoading(false)
