@@ -202,3 +202,54 @@ Reponds avec un JSON (indices des 3 fiches les plus complementaires) :
   return parsed.related.map(i => allNotes[i]).filter(Boolean).slice(0, 3)
 }
 
+export async function genererQuestions(content, title = '') {
+  const prompt = "Genere 3 questions de revision courtes et precises basees sur cette fiche LGPI.\n" +
+    "Titre : " + title + "\n" +
+    "Contenu : " + content.slice(0, 600) + "\n\n" +
+    "Reponds UNIQUEMENT avec du JSON valide : " +
+    '{"questions":[{"q":"question 1","r":"reponse courte 1"},{"q":"question 2","r":"reponse courte 2"},{"q":"question 3","r":"reponse courte 3"}]}'
+  const result = await groqCall([{ role: 'user', content: prompt }], 400)
+  const clean = result.replace(/```json|```/g, '').trim()
+  const start = clean.indexOf('{'), end = clean.lastIndexOf('}')
+  return JSON.parse(clean.slice(start, end + 1)).questions
+}
+
+export async function resumeModule(fiches, moduleLabel) {
+  const fichesList = fiches.slice(0, 10).map((f, i) =>
+    (i + 1) + '. ' + f.title + ' (' + f.type + ')'
+  ).join('\n')
+  const prompt = "Resume le contenu du module LGPI '" + moduleLabel + "' en 3-4 phrases pour une nouvelle recrue.\n\n" +
+    "Fiches du module :\n" + fichesList + "\n\n" +
+    "Reponds avec un paragraphe clair et concis en francais, sans bullet points."
+  return groqCall([{ role: 'user', content: prompt }], 300)
+}
+
+export async function suggererFichesLiees(currentTitle, currentContent, allFiches) {
+  const candidates = allFiches.slice(0, 30).map(f => f.id + '|' + f.title).join('\n')
+  const prompt = "Fiche courante : " + currentTitle + "\n" +
+    "Contenu : " + currentContent.slice(0, 300) + "\n\n" +
+    "Parmi ces fiches, lesquelles sont les plus liees ?\n" + candidates + "\n\n" +
+    "Reponds UNIQUEMENT avec du JSON : " +
+    '{"ids":["id1","id2","id3"]}'
+  const result = await groqCall([{ role: 'user', content: prompt }], 150)
+  const clean = result.replace(/```json|```/g, '').trim()
+  try {
+    const start = clean.indexOf('{'), end = clean.lastIndexOf('}')
+    return JSON.parse(clean.slice(start, end + 1)).ids || []
+  } catch { return [] }
+}
+
+export async function detecterDoublons(newTitle, newContent, existingFiches) {
+  if (existingFiches.length === 0) return []
+  const candidates = existingFiches.slice(0, 20).map(f => f.id + '|' + f.title).join('\n')
+  const prompt = "Nouvelle fiche : " + newTitle + "\nContenu : " + newContent.slice(0, 200) + "\n\n" +
+    "Parmi ces fiches existantes, lesquelles sont potentiellement en doublon ?\n" + candidates + "\n\n" +
+    "Reponds UNIQUEMENT avec du JSON (liste vide si aucun doublon) : " +
+    '{"doublons":[{"id":"id1","raison":"explication courte"}]}'
+  const result = await groqCall([{ role: 'user', content: prompt }], 200)
+  const clean = result.replace(/```json|```/g, '').trim()
+  try {
+    const start = clean.indexOf('{'), end = clean.lastIndexOf('}')
+    return JSON.parse(clean.slice(start, end + 1)).doublons || []
+  } catch { return [] }
+}
