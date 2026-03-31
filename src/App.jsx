@@ -41,7 +41,7 @@ export default function App() {
   const { getLevel, setLevel, updateFromRevision, getMasteryStats, clearMastery } = useMastery()
   const { updateSRS, getDueNotes, getSRSStats, clearSRS } = useSpacedRepetition()
   const { role, isAdmin, isLoggedIn, login, logout, error: authError, account, userId } = useAuth()
-  const { recordView, getGlobalStats, getMostViewedNotes } = useActivityStats(userId)
+  const { recordView, getGlobalStats, getMostViewedNotes, activity } = useActivityStats(userId)
   const { size: fontSize, setSize: setFontSize } = useFontSize()
   const { getShareUrl } = useHashRouter()
   const appRef = usePageEnter([])
