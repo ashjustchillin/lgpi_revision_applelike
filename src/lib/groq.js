@@ -114,3 +114,142 @@ Reponds UNIQUEMENT avec un JSON valide (sans backticks) :
   const clean = result.replace(/```json|```/g, '').trim()
   return JSON.parse(clean).points
 }
+
+// Résumé d'un module complet
+export async function resumerModule(notes, moduleLabel) {
+  if (!notes.length) throw new Error('Aucune fiche dans ce module')
+  const notesText = notes.slice(0, 15).map((n, i) =>
+    `${i + 1}. ${n.title}: ${(n.content || '').slice(0, 200)}`
+  ).join('\n')
+
+  const prompt = `Tu es un expert LGPI. Voici les fiches du module "${moduleLabel}" (${notes.length} fiches au total).
+Genere un resume concis du module en 3-5 points cles, utile pour une personne qui decouvre ce module.
+
+Fiches :
+${notesText}
+
+Reponds avec un JSON valide sur une ligne :
+{"summary":"resume en 2-3 phrases","points":["point 1","point 2","point 3"],"keyFiches":["titre fiche importante 1","titre fiche importante 2"]}`
+
+  const result = await groqCall([{ role: 'user', content: prompt }], 500)
+  const clean = result.replace(/```json|```/g, '').trim()
+  const start = clean.indexOf('{'), end = clean.lastIndexOf('}')
+  return JSON.parse(clean.slice(start, end + 1))
+}
+
+// Détecter les fiches similaires (doublons potentiels)
+export async function detecterDoublons(title, content, existingNotes) {
+  if (!existingNotes.length) return []
+  const existing = existingNotes.slice(0, 30).map((n, i) =>
+    `${i}: ${n.title}`
+  ).join('\n')
+
+  const prompt = `Parmi ces fiches LGPI existantes, lesquelles sont potentiellement similaires ou doublons de la nouvelle fiche ?
+
+Nouvelle fiche : "${title}"
+
+Fiches existantes :
+${existing}
+
+Reponds avec un JSON valide (indices des fiches similaires, tableau vide si aucune) :
+{"similar":[0,3],"reason":"explication courte"}
+
+Si aucune similitude, reponds : {"similar":[],"reason":""}`
+
+  const result = await groqCall([{ role: 'user', content: prompt }], 200)
+  const clean = result.replace(/```json|```/g, '').trim()
+  const start = clean.indexOf('{'), end = clean.lastIndexOf('}')
+  const parsed = JSON.parse(clean.slice(start, end + 1))
+  return parsed.similar.map(i => existingNotes[i]).filter(Boolean).slice(0, 3)
+}
+
+// Générer des questions de révision depuis une fiche
+export async function genererQuestions(content, title) {
+  const prompt = `A partir de cette fiche LGPI, genere 3 questions de revision pertinentes avec leurs reponses.
+Titre : ${title}
+Contenu : ${(content || '').slice(0, 600)}
+
+Reponds avec un JSON valide sur une ligne :
+{"questions":[{"q":"question 1 ?","a":"reponse 1"},{"q":"question 2 ?","a":"reponse 2"},{"q":"question 3 ?","a":"reponse 3"}]}`
+
+  const result = await groqCall([{ role: 'user', content: prompt }], 400)
+  const clean = result.replace(/```json|```/g, '').trim()
+  const start = clean.indexOf('{'), end = clean.lastIndexOf('}')
+  return JSON.parse(clean.slice(start, end + 1)).questions
+}
+
+// Suggérer des fiches liées automatiquement
+export async function suggererFichesLiees(title, content, allNotes) {
+  if (!allNotes.length) return []
+  const notesText = allNotes.slice(0, 40).map((n, i) =>
+    `${i}: ${n.title}`
+  ).join('\n')
+
+  const prompt = `Parmi ces fiches LGPI, lesquelles sont les plus pertinentes en complement de la fiche actuelle ?
+
+Fiche actuelle : "${title}"
+
+Autres fiches :
+${notesText}
+
+Reponds avec un JSON (indices des 3 fiches les plus complementaires) :
+{"related":[0,5,12]}`
+
+  const result = await groqCall([{ role: 'user', content: prompt }], 150)
+  const clean = result.replace(/```json|```/g, '').trim()
+  const start = clean.indexOf('{'), end = clean.lastIndexOf('}')
+  const parsed = JSON.parse(clean.slice(start, end + 1))
+  return parsed.related.map(i => allNotes[i]).filter(Boolean).slice(0, 3)
+}
+
+export async function genererQuestions(content, title = '') {
+  const prompt = "Genere 3 questions de revision courtes et precises basees sur cette fiche LGPI.\n" +
+    "Titre : " + title + "\n" +
+    "Contenu : " + content.slice(0, 600) + "\n\n" +
+    "Reponds UNIQUEMENT avec du JSON valide : " +
+    '{"questions":[{"q":"question 1","r":"reponse courte 1"},{"q":"question 2","r":"reponse courte 2"},{"q":"question 3","r":"reponse courte 3"}]}'
+  const result = await groqCall([{ role: 'user', content: prompt }], 400)
+  const clean = result.replace(/```json|```/g, '').trim()
+  const start = clean.indexOf('{'), end = clean.lastIndexOf('}')
+  return JSON.parse(clean.slice(start, end + 1)).questions
+}
+
+export async function resumeModule(fiches, moduleLabel) {
+  const fichesList = fiches.slice(0, 10).map((f, i) =>
+    (i + 1) + '. ' + f.title + ' (' + f.type + ')'
+  ).join('\n')
+  const prompt = "Resume le contenu du module LGPI '" + moduleLabel + "' en 3-4 phrases pour une nouvelle recrue.\n\n" +
+    "Fiches du module :\n" + fichesList + "\n\n" +
+    "Reponds avec un paragraphe clair et concis en francais, sans bullet points."
+  return groqCall([{ role: 'user', content: prompt }], 300)
+}
+
+export async function suggererFichesLiees(currentTitle, currentContent, allFiches) {
+  const candidates = allFiches.slice(0, 30).map(f => f.id + '|' + f.title).join('\n')
+  const prompt = "Fiche courante : " + currentTitle + "\n" +
+    "Contenu : " + currentContent.slice(0, 300) + "\n\n" +
+    "Parmi ces fiches, lesquelles sont les plus liees ?\n" + candidates + "\n\n" +
+    "Reponds UNIQUEMENT avec du JSON : " +
+    '{"ids":["id1","id2","id3"]}'
+  const result = await groqCall([{ role: 'user', content: prompt }], 150)
+  const clean = result.replace(/```json|```/g, '').trim()
+  try {
+    const start = clean.indexOf('{'), end = clean.lastIndexOf('}')
+    return JSON.parse(clean.slice(start, end + 1)).ids || []
+  } catch { return [] }
+}
+
+export async function detecterDoublons(newTitle, newContent, existingFiches) {
+  if (existingFiches.length === 0) return []
+  const candidates = existingFiches.slice(0, 20).map(f => f.id + '|' + f.title).join('\n')
+  const prompt = "Nouvelle fiche : " + newTitle + "\nContenu : " + newContent.slice(0, 200) + "\n\n" +
+    "Parmi ces fiches existantes, lesquelles sont potentiellement en doublon ?\n" + candidates + "\n\n" +
+    "Reponds UNIQUEMENT avec du JSON (liste vide si aucun doublon) : " +
+    '{"doublons":[{"id":"id1","raison":"explication courte"}]}'
+  const result = await groqCall([{ role: 'user', content: prompt }], 200)
+  const clean = result.replace(/```json|```/g, '').trim()
+  try {
+    const start = clean.indexOf('{'), end = clean.lastIndexOf('}')
+    return JSON.parse(clean.slice(start, end + 1)).doublons || []
+  } catch { return [] }
+}

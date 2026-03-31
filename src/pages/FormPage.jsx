@@ -1,9 +1,44 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from '../lib/motion'
 import { NavBreadcrumb, BackButton, Chip } from '../components/UI'
+import { FICHE_TEMPLATES } from '../lib/templates'
+import { detecterDoublons } from '../lib/groq'
+import { renderMarkdown } from '../lib/utils'
 import { TYPES } from '../lib/firebase'
-import { todayStr } from '../lib/utils'
-import { reformulerContenu, suggererTitre, suggererTags } from '../lib/groq'
+import { todayStr, renderMarkdown } from '../lib/utils'
+import { reformulerContenu, suggererTitre, suggererTags, detecterDoublons } from '../lib/groq'
+
+
+const FICHE_TEMPLATES = [
+  {
+    id: 'procedure',
+    label: 'Procedure',
+    icon: '📋',
+    type: 'procedure',
+    content: "## Contexte\nDans quel cas utiliser cette procedure ?\n\n## Etapes\n- Etape 1\n- Etape 2\n- Etape 3\n\n## Resultat attendu\nDescription du resultat.",
+  },
+  {
+    id: 'bug',
+    label: 'Bug resolu',
+    icon: '🐛',
+    type: 'attention',
+    content: "## Symptome\nDescription du probleme rencontre.\n\n## Cause\nPourquoi ca arrive ?\n\n## Solution\n- Etape 1\n- Etape 2\n\n## Prevention\nComment eviter ce probleme.",
+  },
+  {
+    id: 'astuce',
+    label: 'Astuce',
+    icon: '💡',
+    type: 'astuce',
+    content: "## Astuce\nDescription de l'astuce.\n\n## Comment faire\n- Etape 1\n- Etape 2\n\n## Pourquoi c'est utile\nExplication.",
+  },
+  {
+    id: 'info',
+    label: 'Information',
+    icon: 'ℹ️',
+    type: 'info',
+    content: "## Contexte\nInformation importante a retenir.\n\n## Details\nExplication complete.\n\n## A retenir\n**Point cle** : ..."
+  },
+]
 
 export default function FormPage({ note, mods, notes, curMod, onSave, onCancel }) {
   const [title, setTitle] = useState(note?.title || '')
@@ -17,10 +52,18 @@ export default function FormPage({ note, mods, notes, curMod, onSave, onCancel }
   const [suggestions, setSuggestions] = useState([])
   const [linkSearch, setLinkSearch] = useState('')
   const [saving, setSaving] = useState(false)
+  const [preview, setPreview] = useState(false)
+  const [doublons, setDoublons] = useState([])
+  const [checkingDoublons, setCheckingDoublons] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(!note)
   const tagRef = useRef(null)
 
   // États IA
-  const [aiLoading, setAiLoading] = useState(null) // 'reformuler' | 'titre' | 'tags'
+  const [aiLoading, setAiLoading] = useState(null)
+  const [showPreview, setShowPreview] = useState(false)
+  const [showTemplates, setShowTemplates] = useState(!note)
+  const [doublons, setDoublons] = useState([])
+  const [checkingDoublons, setCheckingDoublons] = useState(false) // 'reformuler' | 'titre' | 'tags'
   const [aiPreview, setAiPreview] = useState(null) // { type, value, original }
   const [aiError, setAiError] = useState(null)
 
@@ -105,6 +148,26 @@ export default function FormPage({ note, mods, notes, curMod, onSave, onCancel }
 
   const accentColor = curModObj?.color || 'var(--accent)'
 
+  // Appliquer un template
+  const applyTemplate = (tpl) => {
+    if (!content) setContent(tpl.content)
+    else if (window.confirm('Remplacer le contenu par ce template ?')) setContent(tpl.content)
+    setType(tpl.type)
+    setShowTemplates(false)
+  }
+
+  // Vérifier les doublons
+  const checkDoublons = async () => {
+    if (!title.trim() || !notes?.length) return
+    setCheckingDoublons(true)
+    try {
+      const existing = notes.filter(n => !note || n.id !== note.id)
+      const found = await detecterDoublons(title, content, existing)
+      setDoublons(found)
+    } catch {}
+    setCheckingDoublons(false)
+  }
+
   return (
     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
       <NavBreadcrumb crumbs={[
@@ -112,6 +175,44 @@ export default function FormPage({ note, mods, notes, curMod, onSave, onCancel }
         { label: curModObj?.label || 'Module', action: () => onCancel('module') },
         { label: note ? 'Modifier' : 'Nouvelle fiche' },
       ]} />
+      {/* Templates */}
+      {showTemplates && !note && (
+        <div className="mb-5">
+          <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-3)' }}>
+            Choisir un template
+          </p>
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            {FICHE_TEMPLATES.map(tpl => (
+              <button key={tpl.id} type="button" onClick={() => applyTemplate(tpl)}
+                className="flex flex-col items-center gap-1 p-3 rounded-xl border text-center transition-all"
+                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+              >
+                <span className="text-xl">{tpl.icon}</span>
+                <span className="text-[10px] font-medium" style={{ color: 'var(--text-2)' }}>{tpl.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Alerte doublons */}
+      {doublons.length > 0 && (
+        <div className="mb-4 p-3 rounded-xl border" style={{ background: '#fef9c3', borderColor: '#fbbf24' }}>
+          <p className="text-xs font-semibold mb-1" style={{ color: '#92400e' }}>
+            ⚠️ {doublons.length} fiche{doublons.length > 1 ? 's' : ''} similaire{doublons.length > 1 ? 's' : ''} detectee{doublons.length > 1 ? 's' : ''}
+          </p>
+          {doublons.map(d => (
+            <p key={d.id} className="text-xs" style={{ color: '#78350f' }}>• {d.raison}</p>
+          ))}
+          <button type="button" onClick={() => setDoublons([])}
+            className="text-[10px] mt-1 underline" style={{ color: '#92400e' }}>
+            Ignorer
+          </button>
+        </div>
+      )}
+
       <BackButton label="Annuler" onClick={() => onCancel(note ? 'fiche' : 'module')} />
 
       <div className="bg-white dark:bg-zinc-800 rounded-2xl border border-gray-200 dark:border-zinc-700 p-6 max-w-2xl">
@@ -221,17 +322,37 @@ export default function FormPage({ note, mods, notes, curMod, onSave, onCancel }
               )}
             </div>
 
-            <textarea
-              value={content} onChange={e => setContent(e.target.value)}
-              placeholder={"Tes notes ici...\n\nTu peux écrire rapidement, l'IA peut reformuler pour toi !\n\nFormatage : ## Titre  **gras**  - liste  `code`"}
-              rows={8}
-              className="input-base resize-y leading-relaxed"
-            />
-            <p className="text-[11px] text-gray-400 mt-1">
-              Markdown : <code className="bg-gray-100 dark:bg-zinc-700 px-1 rounded text-[10px]">## Titre</code>{' '}
-              <code className="bg-gray-100 dark:bg-zinc-700 px-1 rounded text-[10px]">**gras**</code>{' '}
-              <code className="bg-gray-100 dark:bg-zinc-700 px-1 rounded text-[10px]">- liste</code>
-            </p>
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[11px]" style={{ color: 'var(--text-3)' }}>
+                Markdown: <code style={{ background: 'var(--surface-2)', padding: '1px 4px', borderRadius: 4, fontSize: '10px' }}>## Titre</code>{' '}
+                <code style={{ background: 'var(--surface-2)', padding: '1px 4px', borderRadius: 4, fontSize: '10px' }}>**gras**</code>
+              </p>
+              <button type="button" onClick={() => setShowPreview(p => !p)}
+                className="text-[11px] font-medium px-2.5 py-1 rounded-lg flex-shrink-0"
+                style={showPreview ? { background: 'var(--accent)', color: '#fff' } : { background: 'var(--surface-2)', color: 'var(--text-2)' }}>
+                {showPreview ? '✎ Editer' : '👁 Apercu'}
+              </button>
+            </div>
+            {showPreview ? (
+              <div className="prose-fiche p-4 rounded-2xl border min-h-[180px] cursor-pointer"
+                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+                onClick={() => setShowPreview(false)}
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(content || '') }}
+              />
+            ) : (
+              {preview ? (
+              <div className="prose-fiche p-3 rounded-xl border min-h-[160px]"
+                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(content || '_Rien a previsualiser_') }} />
+            ) : (
+              <textarea
+                value={content} onChange={e => setContent(e.target.value)}
+                placeholder={"Tes notes ici...\n\nFormatage : ## Titre  **gras**  - liste  `code`"}
+                rows={8}
+                className="input-base resize-y leading-relaxed"
+              />
+            )}
+            )}
 
             {/* Preview reformulation */}
             <AnimatePresence>

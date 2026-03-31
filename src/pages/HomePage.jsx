@@ -10,6 +10,7 @@ import FicheduJour from '../components/FicheduJour'
 import { MasteryBar } from '../components/Mastery'
 import { useSearch, highlight } from '../hooks/useSearch'
 import { useSearchHistory } from '../hooks/useSearchHistory'
+import { BadgesPanel } from '../components/Badges'
 import { usePullToRefresh } from '../hooks/useSwipe'
 
 const container = { hidden: {}, show: { transition: { staggerChildren: .05 } } }
@@ -24,7 +25,7 @@ export default function HomePage({
   onImportJSON, onImportFiches,
   getMasteryLevel, masteryStats, srsStats,
   isAdmin, onDashboard, onZendesk, userId,
-  onRefresh,
+  onRefresh, allBadges,
 }) {
   const { query, setQuery, results, clear } = useSearch(notes, mods, 200)
   const { history: searchHistory, addSearch, removeSearch } = useSearchHistory()
@@ -304,6 +305,11 @@ export default function HomePage({
             <div className="mb-6"><MasteryBar masteryStats={masteryStats} /></div>
           )}
         </>
+      )}
+
+      {/* Badges */}
+      {allBadges && allBadges.some(b => b.earnedAt) && (
+        <BadgesPanel allBadges={allBadges} />
       )}
 
       <div id="planning-section">

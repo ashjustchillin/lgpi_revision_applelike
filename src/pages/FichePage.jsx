@@ -7,14 +7,46 @@ import { MasteryBadge, MasterySelector } from '../components/Mastery'
 import CommentsPanel from '../components/CommentsPanel'
 import { FocusOverlay } from '../components/UI'
 import { useSwipe } from '../hooks/useSwipe'
-import { resumerFiche } from '../lib/groq'
+import { resumerFiche, suggererFichesLiees, genererQuestions } from '../lib/groq'
 
-export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelete, onFiche, onToast, isPinned, onTogglePin, masteryLevel, onMasteryChange, isAdmin, account }) {
+export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelete, onFiche, onToast, isPinned, onTogglePin, masteryLevel, onMasteryChange, isAdmin, account, onCopyLink }) {
   const [confirm, setConfirm] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [summary, setSummary] = useState(null)
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [focusMode, setFocusMode] = useState(false)
+  const [questions, setQuestions] = useState(null)
+  const [questionsLoading, setQuestionsLoading] = useState(false)
+  const [currentQ, setCurrentQ] = useState(0)
+  const [showAnswer, setShowAnswer] = useState(false)
+  const [suggestedLinks, setSuggestedLinks] = useState(null)
+  const [linksLoading, setLinksLoading] = useState(false)
+  const [suggestedFiches, setSuggestedFiches] = useState(null)
+  const [suggestLoading, setSuggestLoading] = useState(false)
+  const [questions, setQuestions] = useState(null)
+  const [questionsLoading, setQuestionsLoading] = useState(false)
+  const [questionsRevealed, setQuestionsRevealed] = useState({})
+
+  const handleSuggestFiches = async () => {
+    if (suggestedFiches) { setSuggestedFiches(null); return }
+    setSuggestLoading(true)
+    try {
+      const others = (allNotes || []).filter(n => n.id !== note.id)
+      const result = await suggererFichesLiees(note.title, note.content, others)
+      setSuggestedFiches(result)
+    } catch {}
+    finally { setSuggestLoading(false) }
+  }
+
+  const handleQuestions = async () => {
+    if (questions) { setQuestions(null); setQuestionsRevealed({}); return }
+    setQuestionsLoading(true)
+    try {
+      const result = await genererQuestions(note.content, note.title)
+      setQuestions(result)
+    } catch {}
+    finally { setQuestionsLoading(false) }
+  }
 
   const { onTouchStart, onTouchEnd } = useSwipe({
     onRight: () => onBack('module'),
@@ -42,6 +74,29 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
       console.error(e)
       onToast('Erreur export PDF')
     } finally { setExporting(false) }
+  }
+
+  const handleQuestions = async () => {
+    if (questions) { setQuestions(null); return }
+    setQuestionsLoading(true)
+    try {
+      const qs = await genererQuestions(note.content || '', note.title)
+      setQuestions(qs)
+      setCurrentQ(0)
+      setShowAnswer(false)
+    } catch { onToast('Erreur IA') }
+    finally { setQuestionsLoading(false) }
+  }
+
+  const handleSuggestLinks = async () => {
+    if (suggestedLinks) { setSuggestedLinks(null); return }
+    setLinksLoading(true)
+    try {
+      const others = allNotes.filter(n => n.id !== note.id)
+      const ids = await suggererFichesLiees(note.title, note.content || '', others)
+      setSuggestedLinks(ids.map(id => allNotes.find(n => n.id === id)).filter(Boolean))
+    } catch { onToast('Erreur IA') }
+    finally { setLinksLoading(false) }
   }
 
   const handleSummary = async () => {
@@ -124,6 +179,65 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
         )}
       </AnimatePresence>
 
+      {/* Questions IA */}
+      {questions && (
+        <div className="mb-4 rounded-2xl overflow-hidden border" style={{ borderColor: '#7dd3fc' }}>
+          <div className="flex items-center justify-between px-4 py-2.5" style={{ background: '#f0f9ff', borderBottom: '1px solid #7dd3fc' }}>
+            <span className="text-xs font-semibold" style={{ color: '#0369a1' }}>❓ Question {currentQ + 1}/{questions.length}</span>
+            <button onClick={() => setQuestions(null)} className="text-xs" style={{ color: '#0369a1' }}>✕</button>
+          </div>
+          <div className="p-4" style={{ background: 'var(--surface)' }}>
+            <p className="text-sm font-semibold mb-3" style={{ color: 'var(--text-1)' }}>{questions[currentQ]?.q}</p>
+            {showAnswer ? (
+              <div>
+                <p className="text-sm p-3 rounded-xl mb-3" style={{ background: '#f0fdf4', color: '#166534' }}>
+                  ✓ {questions[currentQ]?.r}
+                </p>
+                <div className="flex gap-2">
+                  {currentQ < questions.length - 1 ? (
+                    <button onClick={() => { setCurrentQ(q => q + 1); setShowAnswer(false) }}
+                      className="btn-accent text-xs">Question suivante →</button>
+                  ) : (
+                    <button onClick={() => { setCurrentQ(0); setShowAnswer(false) }}
+                      className="btn-accent text-xs">🔄 Recommencer</button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => setShowAnswer(true)}
+                className="text-xs px-4 py-2 rounded-xl font-semibold"
+                style={{ background: '#f0f9ff', color: '#0369a1', border: '1px solid #7dd3fc' }}>
+                Voir la réponse
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Fiches liées suggérées par IA */}
+      {suggestedLinks && suggestedLinks.length > 0 && (
+        <div className="mb-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-3)' }}>
+            🔗 Fiches liees suggérées par l'IA
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {suggestedLinks.map(f => {
+              const fm = allNotes ? null : null
+              return (
+                <button key={f.id} onClick={() => onFiche(f.id)}
+                  className="text-xs px-3 py-1.5 rounded-xl border font-medium transition-all"
+                  style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                >
+                  {f.title}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Barre actions */}
       <div className="flex items-center gap-2 flex-wrap mb-4">
         <motion.button whileTap={{ scale: .95 }} onClick={handleSummary} disabled={summaryLoading}
@@ -135,6 +249,21 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
             : summary ? '✕ Fermer le resume' : '✨ Resumer avec IA'
           }
         </motion.button>
+        {onCopyLink && (
+          <button onClick={onCopyLink}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+          >🔗 Lien</button>
+        )}
+        {getShareUrl && (
+          <button onClick={() => {
+            const url = getShareUrl(note.id)
+            navigator.clipboard.writeText(url).then(() => onToast('Lien copie !')).catch(() => onToast('Erreur'))
+          }}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+          >🔗 Copier le lien</button>
+        )}
         <button onClick={handleCopy}
           className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
           style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
@@ -143,10 +272,30 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
           className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all disabled:opacity-50"
           style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
         >{exporting ? 'Export...' : '🖨️ PDF'}</button>
+        <button onClick={handleQuestions} disabled={questionsLoading}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+        >
+          {questionsLoading ? '⏳' : questions ? '✕ Questions' : '❓ Questions IA'}
+        </button>
+        <button onClick={handleSuggestLinks} disabled={linksLoading}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+        >
+          {linksLoading ? '⏳' : suggestedLinks ? '✕ Suggestions' : '🔗 Fiches liees IA'}
+        </button>
         <button onClick={() => setFocusMode(true)}
           className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
           style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
         >🎯 Focus</button>
+        <button onClick={handleSuggestFiches} disabled={suggestLoading}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all disabled:opacity-50"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+        >{suggestLoading ? '...' : suggestedFiches ? 'X Suggestions' : 'Fiches liees'}</button>
+        <button onClick={handleQuestions} disabled={questionsLoading}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all disabled:opacity-50"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+        >{questionsLoading ? '...' : questions ? 'X Questions' : 'Questions'}</button>
         <button onClick={onTogglePin}
           className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
           style={isPinned
@@ -168,6 +317,48 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
       <div className="card-base p-5 mb-4 prose-fiche text-sm leading-relaxed" style={{ color: 'var(--text-1)' }}>
         <div dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content || '') }} />
       </div>
+
+      {suggestedFiches && suggestedFiches.length > 0 && (
+        <div className="mb-4 p-4 rounded-2xl border" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
+          <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-3)' }}>Fiches complementaires</p>
+          <div className="space-y-2">
+            {suggestedFiches.map(f => (
+              <motion.button key={f.id} whileHover={{ x: 3 }} whileTap={{ scale: .98 }}
+                onClick={() => onFiche(f.id)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl text-left"
+                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+                <span className="text-sm">📄</span>
+                <span className="text-sm font-medium truncate" style={{ color: 'var(--text-1)' }}>{f.title}</span>
+                <span className="ml-auto text-xs" style={{ color: 'var(--text-3)' }}>›</span>
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {questions && questions.length > 0 && (
+        <div className="mb-4">
+          <p className="text-xs font-semibold mb-3" style={{ color: 'var(--text-3)' }}>Questions de revision</p>
+          <div className="space-y-3">
+            {questions.map((q, i) => (
+              <div key={i} className="card-base p-4">
+                <p className="text-sm font-medium mb-2" style={{ color: 'var(--text-1)' }}>{q.q}</p>
+                {questionsRevealed[i] ? (
+                  <div className="p-3 rounded-xl" style={{ background: '#f0fdf4', borderLeft: '3px solid #22c55e' }}>
+                    <p className="text-sm" style={{ color: '#166534' }}>{q.a}</p>
+                  </div>
+                ) : (
+                  <button onClick={() => setQuestionsRevealed(r => ({ ...r, [i]: true }))}
+                    className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                    style={{ background: 'var(--surface-2)', color: 'var(--text-2)' }}>
+                    Voir la reponse
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Fiches liees */}
       {linkedNotes.length > 0 && (

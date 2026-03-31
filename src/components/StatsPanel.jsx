@@ -1,3 +1,14 @@
+
+// Badges de progression
+const BADGES = [
+  { id: 'first5', label: '5 fiches lues', icon: '📖', condition: (stats) => stats.totalReviewed >= 5 },
+  { id: 'first50', label: '50 fiches lues', icon: '🎓', condition: (stats) => stats.totalReviewed >= 50 },
+  { id: 'streak3', label: 'Streak 3 jours', icon: '🔥', condition: (stats) => stats.streak >= 3 },
+  { id: 'streak7', label: 'Streak 7 jours', icon: '⚡', condition: (stats) => stats.streak >= 7 },
+  { id: 'streak30', label: 'Streak 30 jours', icon: '👑', condition: (stats) => stats.streak >= 30 },
+  { id: 'score80', label: 'Score 80%+', icon: '🏆', condition: (stats) => stats.globalScore >= 80 },
+]
+
 import { motion, useSpring, useTransform, animate } from '../lib/motion'
 import { useEffect, useRef, useState } from 'react'
 
@@ -185,6 +196,47 @@ export default function StatsPanel({ stats, streak, last7Days, globalScore, tota
               </div>
             </div>
           )}
+
+          {/* Objectif quotidien */}
+          {(() => {
+            const today = new Date().toISOString().slice(0, 10)
+            const todayCount = (last7Days.find(d => d.date === today) || {}).total || 0
+            const goal = 5
+            const pct = Math.min(100, Math.round((todayCount / goal) * 100))
+            return (
+              <div className="card-base p-4 mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-semibold" style={{ color: 'var(--text-2)' }}>Objectif du jour</p>
+                  <span className="text-xs font-bold" style={{ color: pct >= 100 ? '#22c55e' : 'var(--accent)' }}>
+                    {todayCount} / {goal} revisions
+                  </span>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--border)' }}>
+                  <div className="h-full rounded-full" style={{ width: pct + '%', background: pct >= 100 ? '#22c55e' : 'var(--accent)', transition: 'width .7s ease' }} />
+                </div>
+                {pct >= 100 && <p className="text-xs mt-1.5 text-center" style={{ color: '#22c55e' }}>Objectif atteint ! 🎉</p>}
+              </div>
+            )
+          })()}
+
+          {/* Badges */}
+          {(() => {
+            const earned = BADGES.filter(b => b.condition({ streak, totalReviewed, globalScore }))
+            if (!earned.length) return null
+            return (
+              <div className="mb-4">
+                <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-3)' }}>Badges obtenus</p>
+                <div className="flex flex-wrap gap-2">
+                  {earned.map(b => (
+                    <div key={b.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                      style={{ background: 'var(--accent-bg)', color: 'var(--accent)' }}>
+                      <span>{b.icon}</span><span>{b.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
         </>
       )}
     </motion.div>

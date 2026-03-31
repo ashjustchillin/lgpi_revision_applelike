@@ -19,6 +19,9 @@ import { useMastery } from './hooks/useMastery'
 import { useSpacedRepetition } from './hooks/useSpacedRepetition'
 import { usePageEnter } from './hooks/useGSAP'
 import { useFontSize } from './hooks/useFontSize'
+import { useHashRouter } from './hooks/useHashRouter'
+import { useBadges } from './hooks/useBadges'
+import { BadgeNotification } from './components/Badges'
 import { useAuth } from './hooks/useAuth'
 import LoginScreen from './components/LoginScreen'
 import PersonalNotesPage from './pages/PersonalNotesPage'
@@ -40,6 +43,7 @@ export default function App() {
   const { role, isAdmin, isLoggedIn, login, logout, error: authError, account, userId } = useAuth()
   const { recordView, getGlobalStats, getMostViewedNotes } = useActivityStats(userId)
   const { size: fontSize, setSize: setFontSize } = useFontSize()
+  const { getShareUrl } = useHashRouter()
   const appRef = usePageEnter([])
 
   const [page, setPage] = useState('home')
@@ -96,13 +100,17 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [page, editingNote])
 
-  const goHome = () => { setPage('home'); setCurFiche(null) }
-  const goModule = id => { setCurMod(id); setPage('module') }
+  const goHome = () => { setPage('home'); setCurFiche(null); window.location.hash = '' }
+  const goModule = id => { setCurMod(id); setPage('module'); window.location.hash = 'module/' + id }
   const goFiche = (id, modId = null) => {
     if (modId) setCurMod(modId)
-    setCurFiche(id); addToHistory(id); recordView(id, modId); setPage('fiche')
+    setCurFiche(id); addToHistory(id); recordView(id, modId); setPage('fiche'); window.location.hash = 'fiche/' + id
   }
   const goRevision = () => setPage('revision')
+  const copyFicheLink = (id) => {
+    const url = window.location.origin + window.location.pathname + '#fiche/' + id
+    navigator.clipboard.writeText(url).catch(() => {})
+  }
   const goDashboard = () => setPage('dashboard')
   const goZendesk = () => setPage('zendesk')
   const goPerso = () => setPage('perso')
@@ -116,6 +124,9 @@ export default function App() {
   const totalReviewed = getTotalReviewed()
   const worstNotes = getWorstNotes(notes, 5)
   const masteryStats = getMasteryStats(notes)
+  const expertCount = (masteryStats || []).find(l => l.level === 4)?.count || 0
+  const badgeStats = { totalViews: totalReviewed, streak, totalReviewed, expertCount, comments: 0 }
+  const { newBadge, clearNewBadge, allBadges } = useBadges(badgeStats)
   const srsStats = getSRSStats(notes)
 
   const handleImportFiches = useCallback(async (fiches) => {
@@ -232,6 +243,7 @@ export default function App() {
                 onDashboard={isAdmin ? goDashboard : null}
                 onZendesk={isAdmin ? goZendesk : null}
                 userId={userId}
+                allBadges={allBadges}
                 getMasteryLevel={getLevel}
                 masteryStats={masteryStats}
                 srsStats={srsStats}
@@ -262,8 +274,10 @@ export default function App() {
                 onBack={dest => { if (dest === 'home') goHome(); else setPage('module') }}
                 onEdit={isAdmin ? () => { setEditingNote(currentNote); setPage('form') } : null}
                 onDelete={isAdmin ? async () => { await deleteNote(curFiche); showToast('Fiche supprimee'); setPage('module') } : null}
+                getShareUrl={(id) => getShareUrl('fiche', { ficheId: id, modId: curMod })}
                 onFiche={goFiche} onToast={showToast}
                 account={account}
+                onCopyLink={() => { copyFicheLink(curFiche); showToast('Lien copie !') }}
                 isPinned={isPinned(curFiche)}
                 onTogglePin={() => {
                   const was = isPinned(curFiche); togglePin(curFiche)
@@ -281,6 +295,7 @@ export default function App() {
             {page === 'form' && isAdmin && (
               <FormPage
                 note={editingNote} mods={mods} notes={notes} curMod={curMod}
+                allNotes={notes}
                 onSave={async data => {
                   await saveNote(data); showToast('Sauvegarde !')
                   if (editingNote) { setCurFiche(editingNote.id); setPage('fiche') }
@@ -316,6 +331,7 @@ export default function App() {
                 mostViewed={getMostViewedNotes(notes, 8)}
                 notes={notes} mods={mods}
                 onFiche={goFiche}
+                activity={activity}
               />
             )}
 
@@ -349,6 +365,7 @@ export default function App() {
         </AnimatePresence>
 
         <Toast message={toast.msg} visible={toast.visible} />
+        <BadgeNotification badge={newBadge} onClose={clearNewBadge} />
         {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}
       </div>
       <BottomNav

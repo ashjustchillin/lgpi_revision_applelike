@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from '../lib/motion'
 import { NavBreadcrumb, BackButton, TypeBadge, SkeletonCard, ConfirmModal, ViewToggle } from '../components/UI'
 import { getType, relativeDate } from '../lib/utils'
+import { resumeModule } from '../lib/groq'
 import { MasteryBadge } from '../components/Mastery'
 import { useSwipe } from '../hooks/useSwipe'
+import { resumerModule } from '../lib/groq'
 
 const SORT_OPTIONS = [
   { value: 'date-desc', label: 'Recentes' },
@@ -23,6 +25,20 @@ export default function ModulePage({ mod, notes, onBack, onFiche, onNewFiche, on
   const [confirmDel, setConfirmDel] = useState(null)
   const [deleting, setDeleting] = useState(null)
   const [view, setView] = useState(() => localStorage.getItem('lgpi-module-view') || 'grid')
+  const [moduleResume, setModuleResume] = useState(null)
+  const [resumeLoading, setResumeLoading] = useState(false)
+  const [moduleSummary, setModuleSummary] = useState(null)
+  const [summaryLoading, setSummaryLoading] = useState(false)
+
+  const handleResumerModule = async () => {
+    if (moduleSummary) { setModuleSummary(null); return }
+    setSummaryLoading(true)
+    try {
+      const result = await resumerModule(modNotes, mod.label)
+      setModuleSummary(result)
+    } catch { }
+    finally { setSummaryLoading(false) }
+  }
 
   // Swipe droite = retour
   const { onTouchStart, onTouchEnd } = useSwipe({
@@ -37,6 +53,16 @@ export default function ModulePage({ mod, notes, onBack, onFiche, onNewFiche, on
   const toggleTag = t => setActiveTags(a => a.includes(t) ? a.filter(x => x !== t) : [...a, t])
 
   const changeView = (v) => { setView(v); localStorage.setItem('lgpi-module-view', v) }
+
+  const handleResume = async () => {
+    if (moduleResume) { setModuleResume(null); return }
+    setResumeLoading(true)
+    try {
+      const text = await resumeModule(modNotes, mod.label)
+      setModuleResume(text)
+    } catch {}
+    setResumeLoading(false)
+  }
 
   const filtered = modNotes
     .filter(n => {
@@ -81,14 +107,66 @@ export default function ModulePage({ mod, notes, onBack, onFiche, onNewFiche, on
           <h2 className="text-xl font-bold" style={{ color: mod.tc, letterSpacing: '-.03em' }}>{mod.label}</h2>
           <p className="text-sm" style={{ color: mod.tc, opacity: .6 }}>{modNotes.length} fiche{modNotes.length !== 1 ? 's' : ''}</p>
         </div>
-        {isAdmin && onNewFiche && (
-          <motion.button whileTap={{ scale: .95 }} onClick={onNewFiche}
-            className="px-4 py-2 rounded-full text-sm font-semibold text-white flex-shrink-0"
-            style={{ background: 'rgba(0,0,0,.2)' }}>
-            + Nouvelle
+        <div className="flex gap-2 flex-shrink-0">
+          <motion.button whileTap={{ scale: .95 }} onClick={handleResumerModule}
+            disabled={summaryLoading}
+            className="px-3 py-2 rounded-full text-xs font-semibold disabled:opacity-50"
+            style={{ background: 'rgba(255,255,255,.3)', color: mod.tc }}>
+            {summaryLoading ? '...' : moduleSummary ? '✕ Resume' : '✨ Resume'}
           </motion.button>
-        )}
+          {isAdmin && onNewFiche && (
+            <motion.button whileTap={{ scale: .95 }} onClick={onNewFiche}
+              className="px-4 py-2 rounded-full text-sm font-semibold text-white"
+              style={{ background: 'rgba(0,0,0,.2)' }}>
+              + Nouvelle
+            </motion.button>
+          )}
+        </div>
       </div>
+
+      {/* Résumé IA module */}
+      {moduleSummary && (
+        <div className="mb-5 p-4 rounded-2xl border" style={{ background: '#faf5ff', borderColor: '#d8b4fe' }}>
+          <p className="text-xs font-semibold mb-2" style={{ color: '#7c3aed' }}>✨ Resume du module</p>
+          <p className="text-sm leading-relaxed mb-3" style={{ color: '#4c1d95' }}>{moduleSummary.summary}</p>
+          {moduleSummary.points?.length > 0 && (
+            <div className="space-y-1.5 mb-3">
+              {moduleSummary.points.map((p, i) => (
+                <div key={i} className="flex items-start gap-2">
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 mt-0.5"
+                    style={{ background: '#7c3aed' }}>{i + 1}</span>
+                  <p className="text-xs" style={{ color: '#4c1d95' }}>{p}</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {moduleSummary.keyFiches?.length > 0 && (
+            <div>
+              <p className="text-[10px] font-semibold mb-1.5" style={{ color: '#7c3aed' }}>Fiches cles</p>
+              <div className="flex flex-wrap gap-1.5">
+                {moduleSummary.keyFiches.map((title, i) => {
+                  const fiche = modNotes.find(n => n.title.toLowerCase().includes(title.toLowerCase()))
+                  return fiche ? (
+                    <button key={i} onClick={() => onFiche(fiche.id)}
+                      className="text-xs px-2.5 py-1 rounded-full font-medium"
+                      style={{ background: '#ede9fe', color: '#7c3aed' }}>
+                      {fiche.title}
+                    </button>
+                  ) : null
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Résumé module IA */}
+      {moduleResume && (
+        <div className="mb-4 p-4 rounded-2xl border" style={{ background: '#faf5ff', borderColor: '#d8b4fe' }}>
+          <p className="text-[10px] font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#7c3aed' }}>✨ Résumé du module</p>
+          <p className="text-sm leading-relaxed" style={{ color: '#4c1d95' }}>{moduleResume}</p>
+        </div>
+      )}
 
       {/* Filtres */}
       <div className="flex flex-wrap gap-2 items-center mb-4">

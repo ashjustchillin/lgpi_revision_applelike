@@ -31,7 +31,7 @@ function MiniBar({ days, color }) {
   )
 }
 
-export default function AdminDashboard({ onBack, globalStats, mostViewed, notes, mods, onFiche }) {
+export default function AdminDashboard({ onBack, globalStats, mostViewed, notes, mods, onFiche, activity }) {
   const totalViews = globalStats.reduce((a, s) => a + s.totalViews, 0)
   const activeUsers = globalStats.filter(s => s.activeDays > 0).length
 
@@ -120,6 +120,44 @@ export default function AdminDashboard({ onBack, globalStats, mostViewed, notes,
           ))}
         </motion.div>
       </div>
+
+      {/* Fiches jamais consultées */}
+      {(() => {
+        if (!activity || !notes?.length) return null
+        const viewedIds = new Set(
+          Object.values(activity).flatMap(u => Object.keys(u.views || {}))
+        )
+        const never = notes.filter(n => !viewedIds.has(n.id))
+        if (!never.length) return null
+        return (
+          <div className="mb-6">
+            <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-1)' }}>
+              Fiches jamais consultees ({never.length})
+            </h2>
+            <div className="space-y-2">
+              {never.slice(0, 5).map(n => {
+                const m = mods?.find(x => x.id === n.module)
+                return (
+                  <div key={n.id}
+                    onClick={() => onFiche(n.id, n.module)}
+                    className="card-base p-3 cursor-pointer flex items-center gap-3"
+                    style={{ borderLeft: '3px solid #e5e7eb' }}>
+                    {m && <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0"
+                      style={{ background: m.bg, color: m.tc }}>{m.icon}</span>}
+                    <span className="text-sm truncate" style={{ color: 'var(--text-2)' }}>{n.title}</span>
+                    <span className="ml-auto text-[10px] flex-shrink-0" style={{ color: 'var(--text-3)' }}>0 vue</span>
+                  </div>
+                )
+              })}
+              {never.length > 5 && (
+                <p className="text-xs text-center" style={{ color: 'var(--text-3)' }}>
+                  +{never.length - 5} autres fiches non consultees
+                </p>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Fiches les plus vues */}
       {mostViewed.length > 0 && (
