@@ -9,7 +9,7 @@ import { FocusOverlay } from '../components/UI'
 import { useSwipe } from '../hooks/useSwipe'
 import { resumerFiche, suggererFichesLiees, genererQuestions } from '../lib/groq'
 
-export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelete, onFiche, onToast, isPinned, onTogglePin, masteryLevel, onMasteryChange, isAdmin, account, onCopyLink }) {
+export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelete, onFiche, onToast, isPinned, onTogglePin, masteryLevel, onMasteryChange, isAdmin, account, onCopyLink, getShareUrl }) {
   const [confirm, setConfirm] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [summary, setSummary] = useState(null)
@@ -22,6 +22,9 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
   const [suggestedFiches, setSuggestedFiches] = useState(null)
   const [suggestLoading, setSuggestLoading] = useState(false)
   const [questionsRevealed, setQuestionsRevealed] = useState({})
+  // === CORRECTIF : déclarations manquantes pour suggestedLinks ===
+  const [suggestedLinks, setSuggestedLinks] = useState(null)
+  const [linksLoading, setLinksLoading] = useState(false)
 
   const handleSuggestFiches = async () => {
     if (suggestedFiches) { setSuggestedFiches(null); return }
@@ -32,6 +35,18 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
       setSuggestedFiches(result)
     } catch {}
     finally { setSuggestLoading(false) }
+  }
+
+  // === CORRECTIF : fonction manquante handleSuggestLinks ===
+  const handleSuggestLinks = async () => {
+    if (suggestedLinks) { setSuggestedLinks(null); return }
+    setLinksLoading(true)
+    try {
+      const others = (allNotes || []).filter(n => n.id !== note.id)
+      const result = await suggererFichesLiees(note.title, note.content, others)
+      setSuggestedLinks(result)
+    } catch {}
+    finally { setLinksLoading(false) }
   }
 
   const { onTouchStart, onTouchEnd } = useSwipe({
@@ -135,16 +150,8 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
             <div className="rounded-2xl p-4 border" style={{ background: '#faf5ff', borderColor: '#d8b4fe' }}>
               <p className="text-xs font-semibold mb-2" style={{ color: '#7c3aed' }}>✨ Points cles</p>
               <div className="space-y-1.5">
-                {summary.map((point, i) => (
-                  <motion.div key={i}
-                    initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * .1 }}
-                    className="flex items-start gap-2"
-                  >
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 mt-0.5"
-                      style={{ background: '#7c3aed' }}>{i + 1}</span>
-                    <p className="text-sm" style={{ color: '#4c1d95' }}>{point}</p>
-                  </motion.div>
+                {(Array.isArray(summary) ? summary : [summary]).map((pt, i) => (
+                  <p key={i} className="text-sm" style={{ color: '#581c87' }}>• {pt}</p>
                 ))}
               </div>
             </div>
@@ -152,15 +159,16 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
         )}
       </AnimatePresence>
 
-      {/* Questions IA */}
-      {questions && (
-        <div className="mb-4 rounded-2xl overflow-hidden border" style={{ borderColor: '#7dd3fc' }}>
-          <div className="flex items-center justify-between px-4 py-2.5" style={{ background: '#f0f9ff', borderBottom: '1px solid #7dd3fc' }}>
-            <span className="text-xs font-semibold" style={{ color: '#0369a1' }}>❓ Question {currentQ + 1}/{questions.length}</span>
-            <button onClick={() => setQuestions(null)} className="text-xs" style={{ color: '#0369a1' }}>✕</button>
-          </div>
-          <div className="p-4" style={{ background: 'var(--surface)' }}>
-            <p className="text-sm font-semibold mb-3" style={{ color: 'var(--text-1)' }}>{questions[currentQ]?.q}</p>
+      {/* Quiz IA (ancien format avec currentQ) */}
+      {questions && questions.length > 0 && questions[0]?.r && (
+        <div className="mb-4 p-4 rounded-2xl border" style={{ background: '#f0f9ff', borderColor: '#7dd3fc' }}>
+          <p className="text-xs font-semibold mb-3" style={{ color: '#0369a1' }}>
+            ❓ Question {currentQ + 1}/{questions.length}
+          </p>
+          <p className="text-sm font-medium mb-3" style={{ color: 'var(--text-1)' }}>
+            {questions[currentQ]?.q}
+          </p>
+          <div>
             {showAnswer ? (
               <div>
                 <p className="text-sm p-3 rounded-xl mb-3" style={{ background: '#f0fdf4', color: '#166534' }}>
@@ -194,19 +202,16 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
             🔗 Fiches liees suggérées par l'IA
           </p>
           <div className="flex flex-wrap gap-2">
-            {suggestedLinks.map(f => {
-              const fm = allNotes ? null : null
-              return (
-                <button key={f.id} onClick={() => onFiche(f.id)}
-                  className="text-xs px-3 py-1.5 rounded-xl border font-medium transition-all"
-                  style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
-                >
-                  {f.title}
-                </button>
-              )
-            })}
+            {suggestedLinks.map(f => (
+              <button key={f.id} onClick={() => onFiche(f.id)}
+                className="text-xs px-3 py-1.5 rounded-xl border font-medium transition-all"
+                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+              >
+                {f.title}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -261,14 +266,6 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
           className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
           style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
         >🎯 Focus</button>
-        <button onClick={handleSuggestFiches} disabled={suggestLoading}
-          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all disabled:opacity-50"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
-        >{suggestLoading ? '...' : suggestedFiches ? 'X Suggestions' : 'Fiches liees'}</button>
-        <button onClick={handleQuestions} disabled={questionsLoading}
-          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all disabled:opacity-50"
-          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
-        >{questionsLoading ? '...' : questions ? 'X Questions' : 'Questions'}</button>
         <button onClick={onTogglePin}
           className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
           style={isPinned
@@ -291,6 +288,7 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
         <div dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content || '') }} />
       </div>
 
+      {/* Fiches complémentaires (suggestedFiches) */}
       {suggestedFiches && suggestedFiches.length > 0 && (
         <div className="mb-4 p-4 rounded-2xl border" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
           <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-3)' }}>Fiches complementaires</p>
@@ -309,7 +307,8 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
         </div>
       )}
 
-      {questions && questions.length > 0 && (
+      {/* Questions de revision (nouveau format avec questionsRevealed) */}
+      {questions && questions.length > 0 && questions[0]?.a && (
         <div className="mb-4">
           <p className="text-xs font-semibold mb-3" style={{ color: 'var(--text-3)' }}>Questions de revision</p>
           <div className="space-y-3">
