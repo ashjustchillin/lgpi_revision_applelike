@@ -1,44 +1,10 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from '../lib/motion'
 import { NavBreadcrumb, BackButton, Chip } from '../components/UI'
-import { FICHE_TEMPLATES } from '../lib/templates'
-import { detecterDoublons } from '../lib/groq'
-import { renderMarkdown } from '../lib/utils'
 import { TYPES } from '../lib/firebase'
 import { todayStr, renderMarkdown } from '../lib/utils'
 import { reformulerContenu, suggererTitre, suggererTags, detecterDoublons } from '../lib/groq'
-
-
-const FICHE_TEMPLATES = [
-  {
-    id: 'procedure',
-    label: 'Procedure',
-    icon: '📋',
-    type: 'procedure',
-    content: "## Contexte\nDans quel cas utiliser cette procedure ?\n\n## Etapes\n- Etape 1\n- Etape 2\n- Etape 3\n\n## Resultat attendu\nDescription du resultat.",
-  },
-  {
-    id: 'bug',
-    label: 'Bug resolu',
-    icon: '🐛',
-    type: 'attention',
-    content: "## Symptome\nDescription du probleme rencontre.\n\n## Cause\nPourquoi ca arrive ?\n\n## Solution\n- Etape 1\n- Etape 2\n\n## Prevention\nComment eviter ce probleme.",
-  },
-  {
-    id: 'astuce',
-    label: 'Astuce',
-    icon: '💡',
-    type: 'astuce',
-    content: "## Astuce\nDescription de l'astuce.\n\n## Comment faire\n- Etape 1\n- Etape 2\n\n## Pourquoi c'est utile\nExplication.",
-  },
-  {
-    id: 'info',
-    label: 'Information',
-    icon: 'ℹ️',
-    type: 'info',
-    content: "## Contexte\nInformation importante a retenir.\n\n## Details\nExplication complete.\n\n## A retenir\n**Point cle** : ..."
-  },
-]
+import { FICHE_TEMPLATES } from '../lib/templates'
 
 export default function FormPage({ note, mods, notes, curMod, onSave, onCancel }) {
   const [title, setTitle] = useState(note?.title || '')
@@ -60,11 +26,7 @@ export default function FormPage({ note, mods, notes, curMod, onSave, onCancel }
 
   // États IA
   const [aiLoading, setAiLoading] = useState(null)
-  const [showPreview, setShowPreview] = useState(false)
-  const [showTemplates, setShowTemplates] = useState(!note)
-  const [doublons, setDoublons] = useState([])
-  const [checkingDoublons, setCheckingDoublons] = useState(false) // 'reformuler' | 'titre' | 'tags'
-  const [aiPreview, setAiPreview] = useState(null) // { type, value, original }
+  const [aiPreview, setAiPreview] = useState(null)
   const [aiError, setAiError] = useState(null)
 
   const curModObj = mods.find(m => m.id === module) || mods[0]
@@ -340,10 +302,9 @@ export default function FormPage({ note, mods, notes, curMod, onSave, onCancel }
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(content || '') }}
               />
             ) : (
-              {preview ? (
-              <div className="prose-fiche p-3 rounded-xl border min-h-[160px]"
+              <div className="prose-fiche p-3 rounded-xl border min-h-[160px] hidden"
                 style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(content || '_Rien a previsualiser_') }} />
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(content || '') }} />
             ) : (
               <textarea
                 value={content} onChange={e => setContent(e.target.value)}
