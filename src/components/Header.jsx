@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from '../lib/motion'
 import { SyncDot } from './UI'
 import { ACCENT_COLORS } from '../lib/firebase'
 
-export default function Header({ title, syncState, darkMode, onDarkToggle, accent, onAccentChange, onHome, onRevision, isAdmin, onLogout, role, onPerso, account }) {
+export default function Header({ title, syncState, darkMode, onDarkToggle, accent, onAccentChange, onHome, onRevision, isAdmin, onLogout, role, onPerso, account, onShortcuts, fontSize, onFontSize }) {
   const [accentOpen, setAccentOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
@@ -103,6 +103,18 @@ export default function Header({ title, syncState, darkMode, onDarkToggle, accen
                     boxShadow: 'var(--shadow-xl)',
                   }}
                 >
+                  <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-3)' }}>Taille texte</p>
+                  <div className="flex gap-1 mb-3">
+                    {[['S','small'],['M','normal'],['L','large']].map(([label, val]) => (
+                      <button key={val} onClick={() => onFontSize && onFontSize(val)}
+                        className="flex-1 py-1 rounded-lg text-xs font-bold transition-all"
+                        style={fontSize === val
+                          ? { background: 'var(--accent)', color: '#fff' }
+                          : { background: 'var(--surface-2)', color: 'var(--text-2)' }}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
                   <p className="text-[10px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-3)' }}>Couleur</p>
                   <div className="flex flex-wrap gap-2">
                     {ACCENT_COLORS.map(ac => (
@@ -137,6 +149,15 @@ export default function Header({ title, syncState, darkMode, onDarkToggle, accen
             >
               📝 Mes notes
             </motion.button>
+          )}
+
+          {/* Raccourcis */}
+          {onShortcuts && (
+            <motion.button whileTap={{ scale: .88 }} onClick={onShortcuts}
+              className="hidden sm:flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold"
+              style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-2)' }}
+              title="Raccourcis clavier (?)"
+            >?</motion.button>
           )}
 
           {/* Logout */}

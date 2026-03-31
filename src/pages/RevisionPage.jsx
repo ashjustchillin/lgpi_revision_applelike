@@ -232,21 +232,84 @@ export default function RevisionPage({ notes, mods, onBack, onRecordSession, onU
           <p className="text-sm">Cree d'abord quelques fiches !</p>
         </div>
       ) : done ? (
-        <motion.div initial={{ opacity: 0, scale: .97 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-12">
-          <AnimatedNumber value={pct} className="text-6xl font-bold mb-2"
-            style={{ color: pct >= 70 ? '#1A8C6A' : pct >= 40 ? '#996600' : '#CC0022' }}
-          />
-          <p className="text-gray-400 text-sm mb-2">{score.ok} correcte{score.ok > 1 ? 's' : ''} · {score.ko} a revoir</p>
-          <p className="text-xs text-gray-400 mb-6">
-            {pct >= 70 ? 'Excellent travail !' : pct >= 40 ? 'Continue comme ca !' : 'Encore un peu de revision !'}
-          </p>
-          <div className="flex gap-3 justify-center">
-            <motion.button whileTap={{ scale: .95 }} onClick={() => buildDeck(modFilter, mode)} className="btn-accent">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="pb-6">
+          {/* Score principal */}
+          <div className="text-center py-8">
+            <div className="relative inline-flex items-center justify-center mb-4">
+              <svg viewBox="0 0 120 120" className="w-28 h-28 -rotate-90">
+                <circle cx="60" cy="60" r="50" fill="none" stroke="var(--border)" strokeWidth="8" />
+                <circle cx="60" cy="60" r="50" fill="none" strokeWidth="8"
+                  stroke={pct >= 70 ? '#22c55e' : pct >= 40 ? '#f59e0b' : '#ef4444'}
+                  strokeDasharray={2 * Math.PI * 50}
+                  strokeDashoffset={2 * Math.PI * 50 * (1 - pct / 100)}
+                  strokeLinecap="round"
+                  style={{ transition: 'stroke-dashoffset 1s ease' }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-3xl font-bold" style={{ color: pct >= 70 ? '#22c55e' : pct >= 40 ? '#f59e0b' : '#ef4444' }}>
+                  {pct}%
+                </span>
+              </div>
+            </div>
+            <p className="text-lg font-semibold mb-1" style={{ color: 'var(--text-1)', letterSpacing: '-.02em' }}>
+              {pct >= 70 ? 'Excellent !' : pct >= 40 ? 'Bien joue !' : 'Continue !'}
+            </p>
+            <p className="text-sm" style={{ color: 'var(--text-2)' }}>
+              {score.ok} correcte{score.ok > 1 ? 's' : ''} · {score.ko} a revoir
+            </p>
+          </div>
+
+          {/* Stats détaillées */}
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            {[
+              { label: 'Correctes', value: score.ok, color: '#22c55e', bg: '#f0fdf4' },
+              { label: 'A revoir', value: score.ko, color: '#ef4444', bg: '#fff0f0' },
+              { label: 'Total', value: score.ok + score.ko, color: 'var(--accent)', bg: 'var(--accent-bg)' },
+            ].map(s => (
+              <div key={s.label} className="rounded-2xl p-4 text-center border"
+                style={{ background: s.bg, borderColor: s.color + '33' }}>
+                <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
+                <p className="text-[11px] font-medium mt-0.5" style={{ color: s.color }}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Fiches à revoir */}
+          {sessionResults.filter(r => !r.correct).length > 0 && (
+            <div className="mb-5">
+              <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-3)' }}>
+                A revoir ({sessionResults.filter(r => !r.correct).length})
+              </p>
+              <div className="space-y-1.5">
+                {sessionResults.filter(r => !r.correct).map(r => {
+                  const rn = notes.find(x => x.id === r.noteId)
+                  const rm = mods.find(x => x.id === r.moduleId)
+                  if (!rn) return null
+                  return (
+                    <div key={r.noteId} className="flex items-center gap-2 p-2.5 rounded-xl border"
+                      style={{ background: '#fff0f0', borderColor: '#fecaca' }}>
+                      <span className="text-red-400 text-sm flex-shrink-0">✗</span>
+                      {rm && <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0"
+                        style={{ background: rm.bg, color: rm.tc }}>{rm.icon}</span>}
+                      <span className="text-xs font-medium truncate" style={{ color: 'var(--text-1)' }}>{rn.title}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-3">
+            <motion.button whileTap={{ scale: .95 }} onClick={() => buildDeck(modFilter, mode)}
+              className="flex-1 btn-accent">
               Recommencer
             </motion.button>
             <motion.button whileTap={{ scale: .95 }} onClick={onBack}
-              className="px-4 py-2 text-sm text-gray-400 border border-gray-200 dark:border-zinc-700 rounded-xl"
-            >Retour</motion.button>
+              className="px-4 py-2.5 text-sm rounded-xl border font-medium"
+              style={{ color: 'var(--text-2)', borderColor: 'var(--border)' }}>
+              Retour
+            </motion.button>
           </div>
         </motion.div>
       ) : (

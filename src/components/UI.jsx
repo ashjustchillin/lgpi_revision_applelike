@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from '../lib/motion'
 import { TYPES } from '../lib/firebase'
 import { getType } from '../lib/utils'
@@ -7,25 +8,64 @@ export function SyncDot({ state }) {
   return (
     <div
       className={`w-2 h-2 rounded-full flex-shrink-0 transition-all duration-500 sync-${state}`}
-      title={state === 'ok' ? 'Synchronisé' : state === 'syncing' ? 'Synchronisation...' : 'Erreur'}
+      title={state === 'ok' ? 'Synchronise' : state === 'syncing' ? 'Synchronisation...' : 'Erreur'}
     />
   )
 }
 
-// ── TOAST ─────────────────────────────────────────────────
-export function Toast({ message, visible }) {
+// ── TOAST avec barre de progression ──────────────────────
+export function Toast({ message, visible, duration = 2200 }) {
+  const [progress, setProgress] = useState(100)
+  const rafRef = useRef(null)
+  const startRef = useRef(null)
+
+  useEffect(() => {
+    if (!visible) { setProgress(100); return }
+
+    // Vibration haptique sur mobile
+    if (navigator.vibrate) navigator.vibrate(40)
+
+    setProgress(100)
+    startRef.current = performance.now()
+
+    const animate = (now) => {
+      const elapsed = now - startRef.current
+      const remaining = Math.max(0, 100 - (elapsed / duration) * 100)
+      setProgress(remaining)
+      if (remaining > 0) rafRef.current = requestAnimationFrame(animate)
+    }
+    rafRef.current = requestAnimationFrame(animate)
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+  }, [visible, message])
+
   return (
     <AnimatePresence>
       {visible && (
         <motion.div
-          initial={{ opacity: 0, y: 12, x: '-50%' }}
-          animate={{ opacity: 1, y: 0, x: '-50%' }}
-          exit={{ opacity: 0, y: 8, x: '-50%' }}
-          transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-          className="fixed bottom-6 left-1/2 z-50 flex items-center gap-2 bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-sm px-5 py-2.5 rounded-full shadow-2xl font-medium whitespace-nowrap"
-          style={{ boxShadow: '0 8px 32px rgba(0,0,0,.25), 0 2px 8px rgba(0,0,0,.1)' }}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 8 }}
+          className="fixed bottom-20 sm:bottom-6 left-1/2 z-50 overflow-hidden rounded-full"
+          style={{
+            transform: 'translateX(-50%)',
+            background: 'rgba(15,15,16,.96)',
+            boxShadow: '0 8px 32px rgba(0,0,0,.3), 0 2px 8px rgba(0,0,0,.2)',
+            minWidth: 160,
+          }}
         >
-          {message}
+          <div className="px-5 py-2.5 text-white text-sm font-medium whitespace-nowrap text-center">
+            {message}
+          </div>
+          <div className="h-0.5 w-full" style={{ background: 'rgba(255,255,255,.1)' }}>
+            <div
+              className="h-full"
+              style={{
+                width: progress + '%',
+                background: 'var(--accent)',
+                transition: 'none',
+              }}
+            />
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
@@ -38,14 +78,15 @@ export function NavBreadcrumb({ crumbs }) {
     <div className="flex items-center gap-1.5 mb-4 flex-wrap">
       {crumbs.map((c, i) => (
         <span key={i} className="flex items-center gap-1.5">
-          {i > 0 && <span className="text-gray-300 dark:text-zinc-600 text-[10px] font-medium">›</span>}
+          {i > 0 && <span className="text-[10px] font-medium" style={{ color: 'var(--text-3)' }}>›</span>}
           <span
             onClick={c.action}
-            className={`text-xs font-medium transition-colors duration-150 ${
-              i === crumbs.length - 1
-                ? 'text-gray-700 dark:text-zinc-300 font-semibold cursor-default'
-                : 'text-gray-400 dark:text-zinc-500 hover:text-accent cursor-pointer'
-            }`}
+            className="text-xs font-medium transition-colors duration-150"
+            style={{
+              color: i === crumbs.length - 1 ? 'var(--text-1)' : 'var(--text-3)',
+              fontWeight: i === crumbs.length - 1 ? 600 : 500,
+              cursor: c.action ? 'pointer' : 'default',
+            }}
           >
             {c.label}
           </span>
@@ -59,27 +100,28 @@ export function NavBreadcrumb({ crumbs }) {
 export function BackButton({ label, onClick }) {
   return (
     <motion.button
-      whileHover={{ x: -2 }}
-      whileTap={{ scale: .97 }}
+      whileTap={{ scale: .95 }}
       onClick={onClick}
-      className="flex items-center gap-2 mb-5 px-2.5 py-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors group"
+      className="flex items-center gap-1.5 text-xs font-medium mb-5 transition-colors"
+      style={{ color: 'var(--text-3)' }}
+      onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+      onMouseLeave={e => e.currentTarget.style.color = 'var(--text-3)'}
     >
-      <span className="text-gray-400 dark:text-zinc-500 text-sm transition-transform group-hover:-translate-x-0.5">←</span>
-      <span className="text-sm font-medium text-gray-400 dark:text-zinc-500">{label}</span>
+      <span>←</span>
+      {label}
     </motion.button>
   )
 }
 
-// ── TYPE BADGE ─────────────────────────────────────────────
+// ── TYPE BADGE ────────────────────────────────────────────
 export function TypeBadge({ typeId, size = 'sm' }) {
   const tp = getType(typeId)
   const cls = size === 'lg'
-    ? 'text-xs font-semibold px-3 py-1.5 rounded-full'
-    : 'text-[10px] font-semibold px-2 py-0.5 rounded-full'
+    ? 'text-xs px-3 py-1 rounded-full font-semibold'
+    : 'text-[10px] px-2 py-0.5 rounded-full font-semibold'
   return (
-    <span className={`${cls} inline-flex items-center gap-1`} style={{ background: tp.bg, color: tp.color }}>
-      <span>{tp.emoji}</span>
-      {size === 'lg' && <span>{tp.label}</span>}
+    <span className={cls} style={{ background: tp.bg, color: tp.color }}>
+      {tp.emoji} {tp.label}
     </span>
   )
 }
@@ -88,96 +130,72 @@ export function TypeBadge({ typeId, size = 'sm' }) {
 export function ModulePill({ mod }) {
   if (!mod) return null
   return (
-    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold"
+    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-semibold"
       style={{ background: mod.bg, color: mod.tc }}>
-      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: mod.color }} />
-      {mod.label}
+      {mod.icon} {mod.label}
     </span>
   )
 }
 
-// ── SKELETON CARD ──────────────────────────────────────────
+// ── SKELETON CARD ─────────────────────────────────────────
 export function SkeletonCard() {
   return (
-    <div className="skeleton p-4 min-h-[120px]">
-      <div className="flex justify-between mb-3">
-        <div className="h-3 w-3/4 rounded-full bg-gray-100 dark:bg-zinc-700" />
-        <div className="h-5 w-14 rounded-full bg-gray-100 dark:bg-zinc-700" />
-      </div>
-      <div className="space-y-2">
-        <div className="h-2.5 w-full rounded-full bg-gray-100 dark:bg-zinc-700" />
-        <div className="h-2.5 w-4/5 rounded-full bg-gray-100 dark:bg-zinc-700" />
-      </div>
-      <div className="flex gap-1.5 mt-4">
-        <div className="h-5 w-12 rounded-full bg-gray-100 dark:bg-zinc-700" />
-        <div className="h-5 w-16 rounded-full bg-gray-100 dark:bg-zinc-700" />
-      </div>
+    <div className="skeleton rounded-2xl p-4" style={{ minHeight: 120 }}>
+      <div className="h-3 rounded-full mb-2" style={{ width: '40%', background: 'var(--border)' }} />
+      <div className="h-4 rounded-full mb-2" style={{ width: '75%', background: 'var(--border)' }} />
+      <div className="h-3 rounded-full mb-1" style={{ width: '90%', background: 'var(--border)' }} />
+      <div className="h-3 rounded-full" style={{ width: '60%', background: 'var(--border)' }} />
     </div>
   )
 }
 
-// ── SKELETON TILE ──────────────────────────────────────────
+// ── SKELETON TILE ─────────────────────────────────────────
 export function SkeletonTile() {
   return (
-    <div className="skeleton p-4 min-h-[115px]">
-      <div className="h-8 w-8 rounded-xl bg-gray-100 dark:bg-zinc-700 mb-3" />
-      <div className="h-3 w-3/4 rounded-full bg-gray-100 dark:bg-zinc-700 mb-2" />
-      <div className="h-2.5 w-1/2 rounded-full bg-gray-100 dark:bg-zinc-700" />
+    <div className="skeleton rounded-2xl" style={{ minHeight: 130 }}>
+      <div className="p-4 space-y-2">
+        <div className="w-10 h-10 rounded-xl" style={{ background: 'var(--border)' }} />
+        <div className="h-4 rounded-full" style={{ width: '70%', background: 'var(--border)' }} />
+        <div className="h-3 rounded-full" style={{ width: '40%', background: 'var(--border)' }} />
+      </div>
     </div>
   )
 }
 
-// ── CHIP (TAG) ─────────────────────────────────────────────
-export function Chip({ label, onRemove }) {
-  return (
-    <motion.span
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0.8, opacity: 0 }}
-      className="inline-flex items-center gap-1.5 bg-accent-soft text-accent text-xs px-2.5 py-1 rounded-full font-medium"
-    >
-      {label}
-      {onRemove && (
-        <button onClick={onRemove}
-          className="opacity-40 hover:opacity-100 transition-opacity text-[10px] leading-none hover:text-red-500"
-        >✕</button>
-      )}
-    </motion.span>
-  )
-}
-
-// ── CONFIRM MODAL ──────────────────────────────────────────
+// ── CONFIRM MODAL ─────────────────────────────────────────
 export function ConfirmModal({ title, message, onConfirm, onCancel, confirmLabel = 'Supprimer', danger = true }) {
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-        style={{ background: 'rgba(0,0,0,.45)', backdropFilter: 'blur(4px)' }}
+        style={{ background: 'rgba(0,0,0,.5)', backdropFilter: 'blur(8px)' }}
         onClick={onCancel}
       >
         <motion.div
-          initial={{ opacity: 0, scale: .97, y: 16 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: .97, y: 8 }}
-          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="bg-white dark:bg-zinc-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl"
+          initial={{ opacity: 0, y: 20, scale: .96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, scale: .96 }}
+          className="rounded-2xl p-6 w-full max-w-sm border"
+          style={{
+            backdropFilter: 'blur(24px)',
+            background: 'rgba(255,255,255,.95)',
+            borderColor: 'var(--border)',
+            boxShadow: 'var(--shadow-xl)',
+          }}
           onClick={e => e.stopPropagation()}
         >
-          <h3 className="font-semibold text-gray-900 dark:text-zinc-100 mb-1.5 text-base">{title}</h3>
-          <p className="text-sm text-gray-500 dark:text-zinc-400 mb-5 leading-relaxed">{message}</p>
+          <h3 className="font-semibold mb-2" style={{ color: 'var(--text-1)', letterSpacing: '-.02em' }}>{title}</h3>
+          {message && <p className="text-sm mb-5" style={{ color: 'var(--text-2)' }}>{message}</p>}
           <div className="flex gap-3">
             <button onClick={onCancel}
-              className="flex-1 py-2.5 text-sm font-medium text-gray-500 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-700 rounded-xl hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors"
-            >Annuler</button>
-            <motion.button
-              whileTap={{ scale: .96 }}
-              onClick={onConfirm}
-              className={`flex-1 py-2.5 text-white text-sm font-semibold rounded-xl transition-colors ${danger ? 'bg-red-500 hover:bg-red-600' : 'hover:brightness-90'}`}
-              style={!danger ? { background: 'var(--accent)' } : {}}
-            >
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium border"
+              style={{ color: 'var(--text-2)', borderColor: 'var(--border)' }}>
+              Annuler
+            </button>
+            <motion.button whileTap={{ scale: .96 }} onClick={onConfirm}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+              style={{ background: danger ? '#ef4444' : 'var(--accent)' }}>
               {confirmLabel}
             </motion.button>
           </div>
@@ -195,15 +213,11 @@ export function EmptyState({ icon, title, subtitle, action, actionLabel }) {
       animate={{ opacity: 1, y: 0 }}
       className="text-center py-14 px-4"
     >
-      <div className="text-4xl mb-3">{icon}</div>
-      <p className="font-semibold text-gray-700 dark:text-zinc-300 mb-1">{title}</p>
-      {subtitle && <p className="text-sm text-gray-400 dark:text-zinc-500 mb-4 leading-relaxed">{subtitle}</p>}
+      <div className="text-4xl mb-3 animate-float">{icon}</div>
+      <p className="font-semibold mb-1" style={{ color: 'var(--text-1)', letterSpacing: '-.02em' }}>{title}</p>
+      {subtitle && <p className="text-sm mb-5 leading-relaxed" style={{ color: 'var(--text-2)' }}>{subtitle}</p>}
       {action && (
-        <motion.button
-          whileTap={{ scale: .96 }}
-          onClick={action}
-          className="btn-accent inline-flex items-center gap-2"
-        >
+        <motion.button whileTap={{ scale: .96 }} onClick={action} className="btn-accent inline-flex items-center gap-2">
           {actionLabel}
         </motion.button>
       )}
@@ -215,10 +229,90 @@ export function EmptyState({ icon, title, subtitle, action, actionLabel }) {
 export function SectionTitle({ children, action, actionLabel }) {
   return (
     <div className="flex items-center justify-between mb-3">
-      <p className="text-[11px] font-semibold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">{children}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--text-3)' }}>{children}</p>
       {action && (
-        <button onClick={action} className="text-xs text-accent hover:underline font-medium">{actionLabel}</button>
+        <button onClick={action} className="text-xs font-medium" style={{ color: 'var(--accent)' }}>{actionLabel}</button>
       )}
     </div>
+  )
+}
+
+// ── VIEW TOGGLE ───────────────────────────────────────────
+export function ViewToggle({ view, onChange }) {
+  return (
+    <div className="flex rounded-xl p-1 gap-1" style={{ background: 'var(--surface-2)' }}>
+      {[
+        { id: 'grid', icon: '⊞' },
+        { id: 'list', icon: '☰' },
+      ].map(v => (
+        <button key={v.id} onClick={() => onChange(v.id)}
+          className="w-8 h-7 rounded-lg flex items-center justify-center text-sm transition-all"
+          style={view === v.id
+            ? { background: 'var(--surface)', color: 'var(--accent)', boxShadow: 'var(--shadow-sm)' }
+            : { color: 'var(--text-3)' }
+          }>
+          {v.icon}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ── FOCUS MODE ────────────────────────────────────────────
+export function FocusOverlay({ onClose }) {
+  useEffect(() => {
+    const handler = e => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
+  return (
+    <div className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,.6)', backdropFilter: 'blur(2px)' }}
+      onClick={onClose} />
+  )
+}
+
+// ── KEYBOARD SHORTCUTS MODAL ──────────────────────────────
+export function ShortcutsModal({ onClose }) {
+  const shortcuts = [
+    { key: 'Esc', desc: 'Retour / Fermer' },
+    { key: 'N', desc: 'Nouvelle fiche (dans un module)' },
+    { key: 'R', desc: 'Mode revision' },
+    { key: 'D', desc: 'Toggle dark mode' },
+    { key: '/', desc: 'Focus recherche' },
+    { key: '?', desc: 'Afficher les raccourcis' },
+  ]
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style={{ background: 'rgba(0,0,0,.5)', backdropFilter: 'blur(8px)' }}
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: .95 }} animate={{ opacity: 1, scale: 1 }}
+          className="rounded-2xl p-6 w-full max-w-sm border"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', boxShadow: 'var(--shadow-xl)' }}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold" style={{ color: 'var(--text-1)' }}>Raccourcis clavier</h3>
+            <button onClick={onClose} style={{ color: 'var(--text-3)' }}>✕</button>
+          </div>
+          <div className="space-y-2">
+            {shortcuts.map(s => (
+              <div key={s.key} className="flex items-center justify-between">
+                <span className="text-sm" style={{ color: 'var(--text-2)' }}>{s.desc}</span>
+                <kbd className="text-xs px-2 py-1 rounded-lg font-mono font-semibold"
+                  style={{ background: 'var(--surface-2)', color: 'var(--text-1)', border: '1px solid var(--border)' }}>
+                  {s.key}
+                </kbd>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   )
 }

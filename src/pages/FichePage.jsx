@@ -5,6 +5,8 @@ import { renderMarkdown, relativeDate, getType } from '../lib/utils'
 import { exportFichePDF } from '../lib/pdf'
 import { MasteryBadge, MasterySelector } from '../components/Mastery'
 import CommentsPanel from '../components/CommentsPanel'
+import { FocusOverlay } from '../components/UI'
+import { useSwipe } from '../hooks/useSwipe'
 import { resumerFiche } from '../lib/groq'
 
 export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelete, onFiche, onToast, isPinned, onTogglePin, masteryLevel, onMasteryChange, isAdmin, account }) {
@@ -12,6 +14,12 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
   const [exporting, setExporting] = useState(false)
   const [summary, setSummary] = useState(null)
   const [summaryLoading, setSummaryLoading] = useState(false)
+  const [focusMode, setFocusMode] = useState(false)
+
+  const { onTouchStart, onTouchEnd } = useSwipe({
+    onRight: () => onBack('module'),
+    threshold: 80,
+  })
 
   if (!note || !mod) return null
 
@@ -48,7 +56,8 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+      onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <NavBreadcrumb crumbs={[
         { label: 'Accueil', action: () => onBack('home') },
         { label: mod.label, action: () => onBack('module') },
@@ -134,6 +143,10 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
           className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all disabled:opacity-50"
           style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
         >{exporting ? 'Export...' : '🖨️ PDF'}</button>
+        <button onClick={() => setFocusMode(true)}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+        >🎯 Focus</button>
         <button onClick={onTogglePin}
           className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
           style={isPinned
@@ -210,6 +223,21 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
         account={account}
         isAdmin={isAdmin}
       />
+
+      {/* Mode focus */}
+      {focusMode && <FocusOverlay onClose={() => setFocusMode(false)} />}
+      {focusMode && (
+        <div className="fixed inset-4 z-50 rounded-3xl overflow-auto p-6"
+          style={{ background: 'var(--surface)', boxShadow: 'var(--shadow-xl)' }}>
+          <button onClick={() => setFocusMode(false)}
+            className="absolute top-4 right-4 text-sm px-3 py-1.5 rounded-full"
+            style={{ background: 'var(--surface-2)', color: 'var(--text-2)' }}>
+            ✕ Quitter le focus
+          </button>
+          <h2 className="text-xl font-bold mb-4 pr-24" style={{ color: 'var(--text-1)', letterSpacing: '-.03em' }}>{note.title}</h2>
+          <div className="prose-fiche" dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content || '') }} />
+        </div>
+      )}
 
       {confirm && (
         <ConfirmModal

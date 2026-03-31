@@ -2,6 +2,14 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from '../lib/motion'
 import { useComments } from '../hooks/useComments'
 
+const AVATAR_COLORS = {
+  'Admin': '#6C63FF', 'JU': '#FF6584', 'MB': '#43D9AD',
+  'SC': '#FFB547', 'NG': '#FF8C42', 'BO': '#3B82F6',
+}
+function getAvatarColor(name) {
+  return AVATAR_COLORS[name] || '#6C63FF'
+}
+
 export default function CommentsPanel({ noteId, account, isAdmin }) {
   const { comments, loading, addComment, deleteComment } = useComments(noteId)
   const [text, setText] = useState('')

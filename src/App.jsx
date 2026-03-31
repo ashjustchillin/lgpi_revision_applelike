@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AnimatePresence, motion } from './lib/motion'
 import Header from './components/Header'
-import { Toast } from './components/UI'
+import { Toast, ShortcutsModal } from './components/UI'
 import HomePage from './pages/HomePage'
 import ModulePage from './pages/ModulePage'
 import FichePage from './pages/FichePage'
@@ -18,6 +18,7 @@ import { useNotifications } from './hooks/useNotifications'
 import { useMastery } from './hooks/useMastery'
 import { useSpacedRepetition } from './hooks/useSpacedRepetition'
 import { usePageEnter } from './hooks/useGSAP'
+import { useFontSize } from './hooks/useFontSize'
 import { useAuth } from './hooks/useAuth'
 import LoginScreen from './components/LoginScreen'
 import PersonalNotesPage from './pages/PersonalNotesPage'
@@ -38,6 +39,7 @@ export default function App() {
   const { updateSRS, getDueNotes, getSRSStats, clearSRS } = useSpacedRepetition()
   const { role, isAdmin, isLoggedIn, login, logout, error: authError, account, userId } = useAuth()
   const { recordView, getGlobalStats, getMostViewedNotes } = useActivityStats(userId)
+  const { size: fontSize, setSize: setFontSize } = useFontSize()
   const appRef = usePageEnter([])
 
   const [page, setPage] = useState('home')
@@ -48,6 +50,7 @@ export default function App() {
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('lgpi-dark') === '1')
   const [accent, setAccent] = useState(() => localStorage.getItem('lgpi-accent') || '#6C63FF')
   const [toast, setToast] = useState({ msg: '', visible: false })
+  const [showShortcuts, setShowShortcuts] = useState(false)
   let toastTimer = null
 
   useEffect(() => {
@@ -82,6 +85,7 @@ export default function App() {
         case 'n': if (page === 'module') { setEditingNote(null); setPage('form') }; break
         case 'r': if (page === 'home' || page === 'module') setPage('revision'); break
         case 'd': setDarkMode(d => !d); break
+        case '?': setShowShortcuts(s => !s); break
         case '/':
           e.preventDefault()
           if (page === 'home') document.querySelector('#global-search')?.focus()
@@ -196,6 +200,9 @@ export default function App() {
           role={role}
           onPerso={goPerso}
           account={account}
+          onShortcuts={() => setShowShortcuts(s => !s)}
+          fontSize={fontSize}
+          onFontSize={setFontSize}
         />
 
         <AnimatePresence mode="wait">
@@ -221,6 +228,7 @@ export default function App() {
                 onTestNotif={() => { sendNotification('LGPI Notes', 'Notification test !'); showToast('Notification envoyee !') }}
                 onImportJSON={handleImportJSON}
                 onImportFiches={handleImportFiches}
+                onRefresh={refresh}
                 onDashboard={isAdmin ? goDashboard : null}
                 onZendesk={isAdmin ? goZendesk : null}
                 userId={userId}
@@ -341,6 +349,7 @@ export default function App() {
         </AnimatePresence>
 
         <Toast message={toast.msg} visible={toast.visible} />
+        {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}
       </div>
       <BottomNav
         page={page}
