@@ -302,17 +302,12 @@ export default function FormPage({ note, mods, notes, curMod, onSave, onCancel }
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(content || '') }}
               />
             ) : (
-              <div className="prose-fiche p-3 rounded-xl border min-h-[160px] hidden"
-                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
-                dangerouslySetInnerHTML={{ __html: renderMarkdown(content || '') }} />
-            ) : (
               <textarea
                 value={content} onChange={e => setContent(e.target.value)}
                 placeholder={"Tes notes ici...\n\nFormatage : ## Titre  **gras**  - liste  `code`"}
                 rows={8}
                 className="input-base resize-y leading-relaxed"
               />
-            )}
             )}
 
             {/* Preview reformulation */}
