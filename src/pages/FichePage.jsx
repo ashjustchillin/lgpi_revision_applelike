@@ -9,7 +9,7 @@ import { FocusOverlay } from '../components/UI'
 import { useSwipe } from '../hooks/useSwipe'
 import { resumerFiche, suggererFichesLiees, genererQuestions } from '../lib/groq'
 
-export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelete, onFiche, onToast, isPinned, onTogglePin, masteryLevel, onMasteryChange, isAdmin, account, onCopyLink, getShareUrl }) {
+export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelete, onFiche, onToast, isPinned, onTogglePin, masteryLevel, onMasteryChange, isAdmin, account, onCopyLink }) {
   const [confirm, setConfirm] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [summary, setSummary] = useState(null)
@@ -229,15 +229,6 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
         </motion.button>
         {onCopyLink && (
           <button onClick={onCopyLink}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
-            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
-          >🔗 Lien</button>
-        )}
-        {getShareUrl && (
-          <button onClick={() => {
-            const url = getShareUrl(note.id)
-            navigator.clipboard.writeText(url).then(() => onToast('Lien copie !')).catch(() => onToast('Erreur'))
-          }}
             className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
             style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
           >🔗 Copier le lien</button>
