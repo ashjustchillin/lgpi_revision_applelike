@@ -50,6 +50,30 @@ export function getSlotsForDay(dow, wt, schedule) {
   return []
 }
 
+// Label contextuel basé sur l'heure de fin du créneau
+function getSlotPeriodLabel(endTime, slots, slotIndex) {
+  const endHour = Math.floor(toSec(endTime) / 3600)
+  const isLastSlot = slotIndex === slots.length - 1
+
+  if (isLastSlot) {
+    if (endHour < 13) return 'Fin de matinée dans'
+    return 'Fin de journée dans'
+  }
+  if (endHour <= 12) return 'Fin de matinée dans'
+  if (endHour <= 14) return 'Pause déjeuner dans'
+  return "Fin d'après-midi dans"
+}
+
+function getSlotPeriodIcon(endTime, slots, slotIndex) {
+  const endHour = Math.floor(toSec(endTime) / 3600)
+  const isLastSlot = slotIndex === slots.length - 1
+
+  if (isLastSlot) return endHour < 13 ? '🌤️' : '🌇'
+  if (endHour <= 12) return '🌤️'
+  if (endHour <= 14) return '🍽️'
+  return '🌇'
+}
+
 // Clé localStorage par utilisateur
 function getScheduleKey(userId) {
   return userId ? 'lgpi-schedule-' + userId : 'lgpi-schedule'
@@ -60,7 +84,6 @@ export function usePlanning(userId) {
 
   const [schedule, setSchedule] = useState(() => {
     try {
-      // Chercher d'abord la clé utilisateur, puis la clé générique (migration)
       const userKey = localStorage.getItem(storageKey)
       if (userKey) return JSON.parse(userKey)
       const generic = localStorage.getItem('lgpi-schedule')
@@ -70,7 +93,6 @@ export function usePlanning(userId) {
   })
   const [planningData, setPlanningData] = useState(null)
 
-  // Recharger si l'utilisateur change
   useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey)
@@ -143,19 +165,24 @@ export function usePlanning(userId) {
         } else {
           const pauseSlot = slots.find((s, i) => i > 0 && nowSec >= toSec(slots[i - 1].e) && nowSec < toSec(s.s))
           const activeSlot = slots.find(s => nowSec >= toSec(s.s) && nowSec < toSec(s.e))
+          const activeSlotIndex = slots.findIndex(s => nowSec >= toSec(s.s) && nowSec < toSec(s.e))
 
           if (pauseSlot) {
             const rem2 = toSec(pauseSlot.s) - nowSec
             cdIcon = '☕'; cdLabel = 'Reprise dans'; cdStatus = 'Pause'; cdStatusClass = 'pause'
             cdValue = `${Math.floor(rem2 / 3600)}h${pad2(Math.floor((rem2 % 3600) / 60))}`
             miniBarPct = 50
+            nextInfo = `Reprise à ${pauseSlot.s}`
           } else if (activeSlot) {
             const rem2 = toSec(activeSlot.e) - nowSec
-            cdIcon = '💼'; cdLabel = 'Fin de plage dans'; cdStatus = 'En cours'; cdStatusClass = 'travail'
+            cdIcon = getSlotPeriodIcon(activeSlot.e, slots, activeSlotIndex)
+            cdLabel = getSlotPeriodLabel(activeSlot.e, slots, activeSlotIndex)
+            cdStatus = 'En cours'; cdStatusClass = 'travail'
             cdValue = `${Math.floor(rem2 / 3600)}h${pad2(Math.floor((rem2 % 3600) / 60))}`
             const total = toSec(activeSlot.e) - toSec(activeSlot.s)
             const elapsed = nowSec - toSec(activeSlot.s)
             miniBarPct = Math.round((elapsed / total) * 100)
+            nextInfo = `Jusqu'à ${activeSlot.e}`
           }
         }
       }
