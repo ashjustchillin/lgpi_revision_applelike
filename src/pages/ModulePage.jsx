@@ -227,8 +227,8 @@ export default function ModulePage({ mod, notes, onBack, onFiche, onNewFiche, on
         <div className="space-y-1.5">
           {filtered.map(n => (
             <motion.div key={n.id}
-              initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-              animate={deleting === n.id ? { opacity: 0 } : { opacity: 1 }}
+              initial={{ opacity: 0, x: -8 }}
+              animate={deleting === n.id ? { opacity: 0 } : { opacity: 1, x: 0 }}
               onClick={() => onFiche(n.id)}
               className="flex items-center gap-3 p-3 rounded-xl cursor-pointer"
               style={{ background: 'var(--surface)' }}

@@ -19,12 +19,8 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
   const [questionsLoading, setQuestionsLoading] = useState(false)
   const [currentQ, setCurrentQ] = useState(0)
   const [showAnswer, setShowAnswer] = useState(false)
-  const [suggestedLinks, setSuggestedLinks] = useState(null)
-  const [linksLoading, setLinksLoading] = useState(false)
   const [suggestedFiches, setSuggestedFiches] = useState(null)
   const [suggestLoading, setSuggestLoading] = useState(false)
-  const [questions, setQuestions] = useState(null)
-  const [questionsLoading, setQuestionsLoading] = useState(false)
   const [questionsRevealed, setQuestionsRevealed] = useState({})
 
   const handleSuggestFiches = async () => {
@@ -36,16 +32,6 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
       setSuggestedFiches(result)
     } catch {}
     finally { setSuggestLoading(false) }
-  }
-
-  const handleQuestions = async () => {
-    if (questions) { setQuestions(null); setQuestionsRevealed({}); return }
-    setQuestionsLoading(true)
-    try {
-      const result = await genererQuestions(note.content, note.title)
-      setQuestions(result)
-    } catch {}
-    finally { setQuestionsLoading(false) }
   }
 
   const { onTouchStart, onTouchEnd } = useSwipe({
@@ -77,26 +63,13 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
   }
 
   const handleQuestions = async () => {
-    if (questions) { setQuestions(null); return }
+    if (questions) { setQuestions(null); setQuestionsRevealed({}); return }
     setQuestionsLoading(true)
     try {
-      const qs = await genererQuestions(note.content || '', note.title)
-      setQuestions(qs)
-      setCurrentQ(0)
-      setShowAnswer(false)
-    } catch { onToast('Erreur IA') }
+      const result = await genererQuestions(note.content, note.title)
+      setQuestions(result)
+    } catch {}
     finally { setQuestionsLoading(false) }
-  }
-
-  const handleSuggestLinks = async () => {
-    if (suggestedLinks) { setSuggestedLinks(null); return }
-    setLinksLoading(true)
-    try {
-      const others = allNotes.filter(n => n.id !== note.id)
-      const ids = await suggererFichesLiees(note.title, note.content || '', others)
-      setSuggestedLinks(ids.map(id => allNotes.find(n => n.id === id)).filter(Boolean))
-    } catch { onToast('Erreur IA') }
-    finally { setLinksLoading(false) }
   }
 
   const handleSummary = async () => {
