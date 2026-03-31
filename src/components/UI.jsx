@@ -316,3 +316,16 @@ export function ShortcutsModal({ onClose }) {
     </AnimatePresence>
   )
 }
+
+// ── CHIP ─────────────────────────────────────────────────
+export function Chip({ label, onRemove, color }) {
+  return (
+    <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium"
+      style={{ background: color ? color + '22' : 'var(--accent-bg)', color: color || 'var(--accent)' }}>
+      {label}
+      {onRemove && (
+        <button onClick={onRemove} className="opacity-60 hover:opacity-100 ml-0.5 leading-none">✕</button>
+      )}
+    </span>
+  )
+}
