@@ -82,7 +82,7 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
     finally { setSummaryLoading(false) }
   }
 
-  // Style commun pour les boutons de la grille (Apple Pill style)
+  // Composant Bouton Réutilisable
   const ActionButton = ({ onClick, disabled, children, variant = 'default', isLoading = false }) => {
     const baseStyle = "flex items-center justify-center gap-2 text-xs font-medium px-4 py-3 rounded-2xl transition-all active:scale-95 select-none"
     const variants = {
@@ -114,7 +114,7 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
       transition={{ duration: 0.2, ease: "easeOut" }}
       onTouchStart={onTouchStart} 
       onTouchEnd={onTouchEnd}
-      className="pb-20" // Padding en bas pour ne pas être caché par la nav bar
+      className="pb-20"
     >
       {/* En-tête minimaliste */}
       <div className="flex items-center justify-between mb-4">
@@ -152,48 +152,47 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
         </div>
       )}
 
-      {/* --- GRILLE D'ACTIONS (Style iOS Control Center) --- */}
-      <div className="grid grid-cols-2 gap-3 mb-8">
-        {/* Actions IA mises en avant */}
-        <ActionButton onClick={handleSummary} isLoading={summaryLoading} variant="accentPurple">
-          {summary ? '✕ Masquer' : '✨ Résumer'}
-        </ActionButton>
-        <ActionButton onClick={handleQuestions} isLoading={questionsLoading} variant="accentBlue">
-          {questions ? '✕ Quiz' : '❓ Quiz IA'}
-        </ActionButton>
-        <ActionButton onClick={handleSuggestLinks} isLoading={linksLoading} variant="default">
-          {suggestedLinks ? '✕ Liens' : '🔗 Fiches liées'}
-        </ActionButton>
-        <ActionButton onClick={() => setFocusMode(true)} variant="default">
-          🎯 Focus
-        </ActionButton>
-        
-        {/* Actions Utilitaires */}
-        {onCopyLink && (
-          <ActionButton onClick={onCopyLink} variant="ghost">
-            🔗 Lien
-          </ActionButton>
-        )}
-        <ActionButton onClick={handleCopy} variant="ghost">
-          📋 Copier
-        </ActionButton>
-        <ActionButton onClick={handleExportPDF} isLoading={exporting} variant="ghost" className="col-span-2 sm:col-span-1">
-          {exporting ? 'Export...' : '🖨️ Exporter PDF'}
-        </ActionButton>
-      </div>
-
-      {/* Niveau de maitrise */}
-      <div className="mb-8 p-4 rounded-2xl border" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
-        <div className="flex justify-between items-center mb-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--text-3)]">Maîtrise</p>
-          {masteryLevel > 0 && <span className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--accent)] text-white">Niveau {masteryLevel}</span>}
-        </div>
+      {/* Niveau de maitrise (Gardé en haut car info rapide, sans interaction lourde) */}
+      <div className="mb-6">
         <MasterySelector current={masteryLevel ?? 0} onChange={onMasteryChange} />
       </div>
 
-      {/* Contenu Principal */}
+      {/* === CONTENU PRINCIPAL (Priorité Absolue) === */}
       <div className="card-base p-6 sm:p-8 rounded-3xl mb-6 shadow-sm prose-fiche text-[15px] leading-relaxed" style={{ color: 'var(--text-1)', background: 'var(--surface)', border: '1px solid var(--border)' }}>
         <div dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content || '') }} />
+      </div>
+
+      {/* === GRILLE D'ACTIONS (Déplacée après le contenu) === */}
+      <div className="mb-8">
+        <p className="text-[11px] font-bold uppercase tracking-widest mb-3 text-[var(--text-3)]">Actions & Outils</p>
+        <div className="grid grid-cols-2 gap-3">
+          {/* Actions IA mises en avant */}
+          <ActionButton onClick={handleSummary} isLoading={summaryLoading} variant="accentPurple">
+            {summary ? '✕ Masquer' : '✨ Résumer'}
+          </ActionButton>
+          <ActionButton onClick={handleQuestions} isLoading={questionsLoading} variant="accentBlue">
+            {questions ? '✕ Quiz' : '❓ Quiz IA'}
+          </ActionButton>
+          <ActionButton onClick={handleSuggestLinks} isLoading={linksLoading} variant="default">
+            {suggestedLinks ? '✕ Liens' : '🔗 Fiches liées'}
+          </ActionButton>
+          <ActionButton onClick={() => setFocusMode(true)} variant="default">
+            🎯 Focus
+          </ActionButton>
+          
+          {/* Actions Utilitaires */}
+          {onCopyLink && (
+            <ActionButton onClick={onCopyLink} variant="ghost">
+              🔗 Lien
+            </ActionButton>
+          )}
+          <ActionButton onClick={handleCopy} variant="ghost">
+            📋 Copier
+          </ActionButton>
+          <ActionButton onClick={handleExportPDF} isLoading={exporting} variant="ghost" className="col-span-2 sm:col-span-1">
+            {exporting ? 'Export...' : '🖨️ Exporter PDF'}
+          </ActionButton>
+        </div>
       </div>
 
       {/* ── IMAGES DE LA FICHE ── */}
@@ -231,7 +230,7 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
         )}
       </AnimatePresence>
 
-      {/* Quiz IA (Overlay style) */}
+      {/* Quiz IA */}
       {questions && questions.length > 0 && questions[0]?.r && (
         <div className="mb-6 p-5 rounded-3xl border shadow-sm" style={{ background: '#f0f9ff', borderColor: '#7dd3fc' }}>
           <div className="flex justify-between items-center mb-4">
