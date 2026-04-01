@@ -22,9 +22,15 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
   const [suggestedFiches, setSuggestedFiches] = useState(null)
   const [suggestLoading, setSuggestLoading] = useState(false)
   const [questionsRevealed, setQuestionsRevealed] = useState({})
+<<<<<<< HEAD
   const [suggestedLinks, setSuggestedLinks] = useState(null)
   const [linksLoading, setLinksLoading] = useState(false)
   const [expandedImage, setExpandedImage] = useState(null)
+=======
+  // === CORRECTIF : déclarations manquantes pour suggestedLinks ===
+  const [suggestedLinks, setSuggestedLinks] = useState(null)
+  const [linksLoading, setLinksLoading] = useState(false)
+>>>>>>> 34ccb7a91f9b13dfb6b3625b669f4b1bffba8663
 
   const handleSuggestFiches = async () => {
     if (suggestedFiches) { setSuggestedFiches(null); return }
@@ -37,6 +43,10 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
     finally { setSuggestLoading(false) }
   }
 
+<<<<<<< HEAD
+=======
+  // === CORRECTIF : fonction manquante handleSuggestLinks ===
+>>>>>>> 34ccb7a91f9b13dfb6b3625b669f4b1bffba8663
   const handleSuggestLinks = async () => {
     if (suggestedLinks) { setSuggestedLinks(null); return }
     setLinksLoading(true)
@@ -48,7 +58,14 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
     finally { setLinksLoading(false) }
   }
 
+<<<<<<< HEAD
   const { onTouchStart, onTouchEnd } = useSwipe({ onRight: () => onBack('module'), threshold: 80 })
+=======
+  const { onTouchStart, onTouchEnd } = useSwipe({
+    onRight: () => onBack('module'),
+    threshold: 80,
+  })
+>>>>>>> 34ccb7a91f9b13dfb6b3625b669f4b1bffba8663
 
   if (!note || !mod) return null
 
@@ -118,18 +135,36 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
             <div className="rounded-2xl p-4 border" style={{ background: '#faf5ff', borderColor: '#d8b4fe' }}>
               <p className="text-xs font-semibold mb-2" style={{ color: '#7c3aed' }}>✨ Points cles</p>
               <div className="space-y-1.5">
+<<<<<<< HEAD
                 {(Array.isArray(summary) ? summary : [summary]).map((pt, i) => (<p key={i} className="text-sm" style={{ color: '#581c87' }}>• {pt}</p>))}
+=======
+                {(Array.isArray(summary) ? summary : [summary]).map((pt, i) => (
+                  <p key={i} className="text-sm" style={{ color: '#581c87' }}>• {pt}</p>
+                ))}
+>>>>>>> 34ccb7a91f9b13dfb6b3625b669f4b1bffba8663
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
+<<<<<<< HEAD
       {/* Quiz IA */}
       {questions && questions.length > 0 && questions[0]?.r && (
         <div className="mb-4 p-4 rounded-2xl border" style={{ background: '#f0f9ff', borderColor: '#7dd3fc' }}>
           <p className="text-xs font-semibold mb-3" style={{ color: '#0369a1' }}>❓ Question {currentQ + 1}/{questions.length}</p>
           <p className="text-sm font-medium mb-3" style={{ color: 'var(--text-1)' }}>{questions[currentQ]?.q}</p>
+=======
+      {/* Quiz IA (ancien format avec currentQ) */}
+      {questions && questions.length > 0 && questions[0]?.r && (
+        <div className="mb-4 p-4 rounded-2xl border" style={{ background: '#f0f9ff', borderColor: '#7dd3fc' }}>
+          <p className="text-xs font-semibold mb-3" style={{ color: '#0369a1' }}>
+            ❓ Question {currentQ + 1}/{questions.length}
+          </p>
+          <p className="text-sm font-medium mb-3" style={{ color: 'var(--text-1)' }}>
+            {questions[currentQ]?.q}
+          </p>
+>>>>>>> 34ccb7a91f9b13dfb6b3625b669f4b1bffba8663
           <div>
             {showAnswer ? (
               <div>
@@ -153,8 +188,19 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
           <p className="text-[11px] font-semibold uppercase tracking-wider mb-2" style={{ color: 'var(--text-3)' }}>🔗 Fiches liees suggérées par l'IA</p>
           <div className="flex flex-wrap gap-2">
             {suggestedLinks.map(f => (
+<<<<<<< HEAD
               <button key={f.id} onClick={() => onFiche(f.id)} className="text-xs px-3 py-1.5 rounded-xl border font-medium transition-all"
                 style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text-2)' }}>{f.title}</button>
+=======
+              <button key={f.id} onClick={() => onFiche(f.id)}
+                className="text-xs px-3 py-1.5 rounded-xl border font-medium transition-all"
+                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+              >
+                {f.title}
+              </button>
+>>>>>>> 34ccb7a91f9b13dfb6b3625b669f4b1bffba8663
             ))}
           </div>
         </div>
@@ -167,6 +213,7 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
           style={{ background: '#faf5ff', color: '#7c3aed', border: '1px solid #d8b4fe' }}>
           {summaryLoading ? <><span className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" /> Resume...</> : summary ? '✕ Fermer le resume' : '✨ Resumer avec IA'}
         </motion.button>
+<<<<<<< HEAD
         {onCopyLink && <button onClick={onCopyLink} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}>🔗 Copier le lien</button>}
         <button onClick={handleCopy} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}>📋 Copier</button>
         <button onClick={handleExportPDF} disabled={exporting} className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all disabled:opacity-50" style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}>{exporting ? 'Export...' : '🖨️ PDF'}</button>
@@ -177,6 +224,45 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
           style={isPinned ? { background: '#fef3c7', borderColor: '#fbbf24', color: '#92400e' } : { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}>
           {isPinned ? '📌 Epinglee' : '📍 Epingler'}
         </button>
+=======
+        {onCopyLink && (
+          <button onClick={onCopyLink}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
+            style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+          >🔗 Copier le lien</button>
+        )}
+        <button onClick={handleCopy}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+        >📋 Copier</button>
+        <button onClick={handleExportPDF} disabled={exporting}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all disabled:opacity-50"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+        >{exporting ? 'Export...' : '🖨️ PDF'}</button>
+        <button onClick={handleQuestions} disabled={questionsLoading}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+        >
+          {questionsLoading ? '⏳' : questions ? '✕ Questions' : '❓ Questions IA'}
+        </button>
+        <button onClick={handleSuggestLinks} disabled={linksLoading}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+        >
+          {linksLoading ? '⏳' : suggestedLinks ? '✕ Suggestions' : '🔗 Fiches liees IA'}
+        </button>
+        <button onClick={() => setFocusMode(true)}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }}
+        >🎯 Focus</button>
+        <button onClick={onTogglePin}
+          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-xl border transition-all"
+          style={isPinned
+            ? { background: '#fef3c7', borderColor: '#fbbf24', color: '#92400e' }
+            : { background: 'var(--surface)', borderColor: 'var(--border)', color: 'var(--text-2)' }
+          }
+        >{isPinned ? '📌 Epinglee' : '📍 Epingler'}</button>
+>>>>>>> 34ccb7a91f9b13dfb6b3625b669f4b1bffba8663
       </div>
 
       {/* Niveau de maitrise */}
@@ -190,6 +276,7 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
         <div dangerouslySetInnerHTML={{ __html: renderMarkdown(note.content || '') }} />
       </div>
 
+<<<<<<< HEAD
       {/* ── IMAGES DE LA FICHE ── */}
       {(note.images || []).length > 0 && (
         <div className="mb-4 pt-4">
@@ -224,6 +311,9 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
       </AnimatePresence>
 
       {/* Fiches complémentaires */}
+=======
+      {/* Fiches complémentaires (suggestedFiches) */}
+>>>>>>> 34ccb7a91f9b13dfb6b3625b669f4b1bffba8663
       {suggestedFiches && suggestedFiches.length > 0 && (
         <div className="mb-4 p-4 rounded-2xl border" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
           <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-3)' }}>Fiches complementaires</p>
@@ -240,7 +330,11 @@ export default function FichePage({ note, mod, allNotes, onBack, onEdit, onDelet
         </div>
       )}
 
+<<<<<<< HEAD
       {/* Questions revision (nouveau format) */}
+=======
+      {/* Questions de revision (nouveau format avec questionsRevealed) */}
+>>>>>>> 34ccb7a91f9b13dfb6b3625b669f4b1bffba8663
       {questions && questions.length > 0 && questions[0]?.a && (
         <div className="mb-4">
           <p className="text-xs font-semibold mb-3" style={{ color: 'var(--text-3)' }}>Questions de revision</p>
