@@ -22,6 +22,9 @@ export const renderMarkdown = text => {
   if (!text) return ''
   let html = text
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  // ── NEW: Support images ![alt](url) ──
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,
+    '<img src="$2" alt="$1" class="rounded-xl max-w-full my-2 border border-gray-200 dark:border-zinc-700" loading="lazy" />')
   html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>')
   html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>')
   html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>')

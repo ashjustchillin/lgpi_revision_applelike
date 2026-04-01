@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
 
-// Hash router leger: #/fiche/ID, #/module/ID, #/home
 function parseHash(hash) {
   const h = (hash || '').replace('#', '').replace(/^\//, '')
   if (!h || h === 'home') return { page: 'home' }
@@ -11,6 +10,7 @@ function parseHash(hash) {
   if (parts[0] === 'perso') return { page: 'perso' }
   if (parts[0] === 'dashboard') return { page: 'dashboard' }
   if (parts[0] === 'zendesk') return { page: 'zendesk' }
+  if (parts[0] === 'explorer') return { page: 'explorer' }
   return { page: 'home' }
 }
 

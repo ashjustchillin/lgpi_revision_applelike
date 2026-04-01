@@ -18,7 +18,7 @@ const item = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0 } }
 
 export default function HomePage({
   mods, notes, syncState,
-  onModule, onAddMod, onDeleteMod, onRevision,
+  onModule, onAddMod, onDeleteMod, onRevision, onExplorer,
   history, onFiche,
   stats, streak, last7Days, globalScore, totalReviewed, worstNotes, onClearStats,
   notifPermission, notifSettings, onRequestNotifPermission, onSaveNotifSettings, onTestNotif,
@@ -33,7 +33,6 @@ export default function HomePage({
   const [modView, setModView] = useState(() => localStorage.getItem('lgpi-mod-view') || 'grid')
   const loading = syncState === 'syncing' && mods.length === 0
 
-  // Pull to refresh
   const { onTouchStart, onTouchEnd, onTouchMove } = usePullToRefresh(
     async () => { if (onRefresh) await onRefresh() },
     80
@@ -58,7 +57,6 @@ export default function HomePage({
     localStorage.setItem('lgpi-mod-view', v)
   }
 
-  // Tous les tags disponibles
   const allTags = [...new Set(notes.flatMap(n => n.tags || []))].slice(0, 12)
 
   return (
@@ -88,7 +86,7 @@ export default function HomePage({
         </motion.p>
       </div>
 
-      {/* Barre de recherche */}
+      {/* Barre de recherche avec hint Cmd+K */}
       <div className="relative mb-4">
         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base pointer-events-none" style={{ color: 'var(--text-3)' }}>⌕</span>
         <input
@@ -99,14 +97,20 @@ export default function HomePage({
           onKeyDown={e => e.key === 'Enter' && handleSearchSubmit()}
           onBlur={handleSearchSubmit}
           placeholder="Rechercher dans toutes les fiches..."
-          className="input-base pl-11 pr-10 py-3.5 rounded-2xl"
+          className="input-base pl-11 pr-20 py-3.5 rounded-2xl"
           style={{ fontSize: '.9rem' }}
         />
-        {query && (
-          <button onClick={() => { clear(); setActiveTag(null) }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-sm"
-            style={{ color: 'var(--text-3)' }}>✕</button>
-        )}
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+          {query ? (
+            <button onClick={() => { clear(); setActiveTag(null) }}
+              className="text-sm" style={{ color: 'var(--text-3)' }}>✕</button>
+          ) : (
+            <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded font-mono"
+              style={{ background: 'var(--surface-2)', color: 'var(--text-3)', border: '1px solid var(--border)' }}>
+              ⌘K
+            </kbd>
+          )}
+        </div>
       </div>
 
       {/* Historique recherches + tags cliquables */}
@@ -165,7 +169,6 @@ export default function HomePage({
                     dangerouslySetInnerHTML={{ __html: highlight(n.title, query) }} />
                   <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'var(--text-2)' }}
                     dangerouslySetInnerHTML={{ __html: highlight(n.excerpt, query) }} />
-                  {/* Tags cliquables dans les résultats */}
                   {(n.tags || []).length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {(n.tags || []).map(t => (
@@ -183,18 +186,20 @@ export default function HomePage({
 
       {!query && (
         <>
-          {/* Fiche du jour */}
           <FicheduJour notes={notes} mods={mods} onFiche={onFiche} getLevel={getMasteryLevel} />
-
-          {/* Historique */}
           <HistoryPanel history={history} notes={notes} mods={mods} onFiche={onFiche} />
 
-          {/* Barre actions */}
+          {/* Barre actions — ajout bouton Explorer */}
           <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
             <div className="flex items-center gap-2 flex-wrap">
               <motion.button whileTap={{ scale: .95 }} onClick={onRevision} className="btn-accent text-xs">
                 🃏 Revision
               </motion.button>
+              {onExplorer && (
+                <motion.button whileTap={{ scale: .95 }} onClick={onExplorer} className="btn-ghost text-xs">
+                  📚 Explorer
+                </motion.button>
+              )}
               {isAdmin && (
                 <motion.button whileTap={{ scale: .95 }} onClick={onAddMod} className="btn-ghost text-xs">
                   + Module
@@ -223,13 +228,11 @@ export default function HomePage({
             </div>
           </div>
 
-          {/* Header modules avec toggle vue */}
           <div className="flex items-center justify-between mb-3">
             <SectionTitle>Modules</SectionTitle>
             <ViewToggle view={modView} onChange={changeModView} />
           </div>
 
-          {/* Modules */}
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
               {Array.from({ length: 4 }).map((_, i) => <SkeletonTile key={i} />)}
@@ -273,7 +276,6 @@ export default function HomePage({
               )}
             </motion.div>
           ) : (
-            // Vue liste
             <div className="space-y-2 mb-6">
               {mods.map(m => {
                 const cnt = notes.filter(n => n.module === m.id).length
@@ -300,14 +302,12 @@ export default function HomePage({
             </div>
           )}
 
-          {/* Mastery bar */}
           {masteryStats?.some(l => l.count > 0) && (
             <div className="mb-6"><MasteryBar masteryStats={masteryStats} /></div>
           )}
         </>
       )}
 
-      {/* Badges */}
       {allBadges && allBadges.some(b => b.earnedAt) && (
         <BadgesPanel allBadges={allBadges} />
       )}

@@ -8,6 +8,8 @@ import FichePage from './pages/FichePage'
 import FormPage from './pages/FormPage'
 import ModFormPage from './pages/ModFormPage'
 import RevisionPage from './pages/RevisionPage'
+import ExplorerPage from './pages/ExplorerPage'
+import CommandPalette from './components/CommandPalette'
 import BottomNav from './components/BottomNav'
 import ParticleBackground from './components/ParticleBackground'
 import { useFirebase } from './hooks/useFirebase'
@@ -41,7 +43,7 @@ export default function App() {
   const { getLevel, setLevel, updateFromRevision, getMasteryStats, clearMastery } = useMastery()
   const { updateSRS, getDueNotes, getSRSStats, clearSRS } = useSpacedRepetition()
   const { role, isAdmin, isLoggedIn, login, logout, error: authError, account, userId } = useAuth()
-  const { recordView, getGlobalStats, getMostViewedNotes } = useActivityStats(userId)
+  const { recordView, getGlobalStats, getMostViewedNotes, activity } = useActivityStats(userId)
   const { size: fontSize, setSize: setFontSize } = useFontSize()
   const { getShareUrl } = useHashRouter()
   const appRef = usePageEnter([])
@@ -55,6 +57,7 @@ export default function App() {
   const [accent, setAccent] = useState(() => localStorage.getItem('lgpi-accent') || '#6C63FF')
   const [toast, setToast] = useState({ msg: '', visible: false })
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [showCommandPalette, setShowCommandPalette] = useState(false)
   let toastTimer = null
 
   useEffect(() => {
@@ -77,14 +80,23 @@ export default function App() {
 
   useEffect(() => {
     const handler = e => {
+      // Cmd+K / Ctrl+K — Command Palette (fonctionne partout, même dans les inputs)
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setShowCommandPalette(s => !s)
+        return
+      }
+
       const tag = document.activeElement.tagName.toLowerCase()
       if (tag === 'input' || tag === 'textarea' || tag === 'select') return
       switch (e.key.toLowerCase()) {
         case 'escape':
+          if (showCommandPalette) { setShowCommandPalette(false); return }
           if (page === 'module') setPage('home')
           else if (page === 'fiche') setPage('module')
           else if (page === 'form') setPage(editingNote ? 'fiche' : 'module')
           else if (page === 'revision') setPage('home')
+          else if (page === 'explorer') setPage('home')
           break
         case 'n': if (page === 'module') { setEditingNote(null); setPage('form') }; break
         case 'r': if (page === 'home' || page === 'module') setPage('revision'); break
@@ -98,7 +110,7 @@ export default function App() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [page, editingNote])
+  }, [page, editingNote, showCommandPalette])
 
   const goHome = () => { setPage('home'); setCurFiche(null); window.location.hash = '' }
   const goModule = id => { setCurMod(id); setPage('module'); window.location.hash = 'module/' + id }
@@ -107,6 +119,7 @@ export default function App() {
     setCurFiche(id); addToHistory(id); recordView(id, modId); setPage('fiche'); window.location.hash = 'fiche/' + id
   }
   const goRevision = () => setPage('revision')
+  const goExplorer = () => setPage('explorer')
   const copyFicheLink = (id) => {
     const url = window.location.origin + window.location.pathname + '#fiche/' + id
     navigator.clipboard.writeText(url).catch(() => {})
@@ -187,9 +200,9 @@ export default function App() {
     page === 'module' ? (currentMod?.label || '') :
     page === 'fiche' ? (currentNote?.title || '') :
     page === 'form' ? (editingNote ? 'Modifier' : 'Nouvelle fiche') :
-    page === 'modform' ? 'Nouveau module' : 'Mode revision'
+    page === 'modform' ? 'Nouveau module' :
+    page === 'explorer' ? 'Explorer' : 'Mode revision'
 
-  // Ecran de login si pas connecte
   if (!isLoggedIn) {
     return (
       <div style={{ '--accent': accent, '--accent-bg': accent + '22', '--accent-light': accent + '1a' }}>
@@ -228,6 +241,7 @@ export default function App() {
                 onAddMod={isAdmin ? () => setPage('modform') : null}
                 onDeleteMod={isAdmin ? async id => { await deleteMod(id); showToast('Module supprime') } : null}
                 onRevision={goRevision}
+                onExplorer={goExplorer}
                 history={history} onFiche={goFiche}
                 stats={stats} streak={streak} last7Days={last7Days}
                 globalScore={globalScore} totalReviewed={totalReviewed}
@@ -335,6 +349,16 @@ export default function App() {
               />
             )}
 
+            {page === 'explorer' && (
+              <ExplorerPage
+                notes={notes}
+                mods={mods}
+                onBack={goHome}
+                onFiche={goFiche}
+                getMasteryLevel={getLevel}
+              />
+            )}
+
             {page === 'perso' && (
               <PersonalNotesPage
                 account={account}
@@ -368,6 +392,18 @@ export default function App() {
         <BadgeNotification badge={newBadge} onClose={clearNewBadge} />
         {showShortcuts && <ShortcutsModal onClose={() => setShowShortcuts(false)} />}
       </div>
+
+      <AnimatePresence>
+        {showCommandPalette && (
+          <CommandPalette
+            notes={notes}
+            mods={mods}
+            onFiche={goFiche}
+            onClose={() => setShowCommandPalette(false)}
+          />
+        )}
+      </AnimatePresence>
+
       <BottomNav
         page={page}
         srsCount={srsStats?.due || 0}
@@ -376,6 +412,7 @@ export default function App() {
           if (dest === 'home') goHome()
           else if (dest === 'revision') goRevision()
           else if (dest === 'perso') goPerso()
+          else if (dest === 'explorer') goExplorer()
           else if (dest === 'search') { goHome(); setTimeout(() => document.querySelector('#global-search')?.focus(), 200) }
           else if (dest === 'planning') { goHome(); setTimeout(() => document.querySelector('#planning-section')?.scrollIntoView({ behavior: 'smooth' }), 200) }
         }}

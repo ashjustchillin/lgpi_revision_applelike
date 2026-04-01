@@ -3,7 +3,7 @@ import { motion } from '../lib/motion'
 export default function BottomNav({ page, onNavigate, srsCount = 0, account }) {
   const NAV_ITEMS = [
     { id: 'home',     icon: '🏠', label: 'Accueil'  },
-    { id: 'search',   icon: '⌕',  label: 'Recherche' },
+    { id: 'explorer', icon: '📚', label: 'Explorer'  },
     { id: 'revision', icon: '🃏', label: 'Revision'  },
     { id: 'perso',    icon: '📝', label: account?.name?.split(' ')[0] || 'Mes notes' },
   ]
@@ -12,7 +12,7 @@ export default function BottomNav({ page, onNavigate, srsCount = 0, account }) {
     <nav className="bottom-nav sm:hidden">
       {NAV_ITEMS.map(item => {
         const active = item.id === page ||
-          (item.id === 'home' && !['revision', 'perso', 'search'].includes(page))
+          (item.id === 'home' && !['revision', 'perso', 'explorer'].includes(page))
         const accent = item.id === 'perso' && account?.color ? account.color : 'var(--accent)'
 
         return (
