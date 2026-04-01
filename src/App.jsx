@@ -1,14 +1,17 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { AnimatePresence, motion } from './lib/motion'
 import Header from './components/Header'
 import { Toast, ShortcutsModal } from './components/UI'
+import HomePage from './pages/HomePage'
+import ModulePage from './pages/ModulePage'
+import FichePage from './pages/FichePage'
+import FormPage from './pages/FormPage'
+import ModFormPage from './pages/ModFormPage'
+import RevisionPage from './pages/RevisionPage'
+import ExplorerPage from './pages/ExplorerPage'
 import CommandPalette from './components/CommandPalette'
 import BottomNav from './components/BottomNav'
 import ParticleBackground from './components/ParticleBackground'
-import LoginScreen from './components/LoginScreen'
-import { BadgeNotification } from './components/Badges'
-
-// --- CUSTOM HOOKS ---
 import { useFirebase } from './hooks/useFirebase'
 import { useStats } from './hooks/useStats'
 import { useHistory } from './hooks/useHistory'
@@ -20,25 +23,16 @@ import { usePageEnter } from './hooks/useGSAP'
 import { useFontSize } from './hooks/useFontSize'
 import { useHashRouter } from './hooks/useHashRouter'
 import { useBadges } from './hooks/useBadges'
+import { BadgeNotification } from './components/Badges'
 import { useAuth } from './hooks/useAuth'
+import LoginScreen from './components/LoginScreen'
+import PersonalNotesPage from './pages/PersonalNotesPage'
+import AdminDashboard from './pages/AdminDashboard'
+import ZendeskPage from './pages/ZendeskPage'
 import { useActivityStats } from './hooks/useActivityStats'
-
-// --- LIBRARY & CONFIG ---
 import { ACCOUNTS } from './lib/accounts'
 import { collection, addDoc } from 'firebase/firestore'
 import { db } from './lib/firebase'
-
-// --- LAZY LOADED PAGES (Optimisation du chargement) ---
-const HomePage = lazy(() => import('./pages/HomePage'))
-const ModulePage = lazy(() => import('./pages/ModulePage'))
-const FichePage = lazy(() => import('./pages/FichePage'))
-const FormPage = lazy(() => import('./pages/FormPage'))
-const ModFormPage = lazy(() => import('./pages/ModFormPage'))
-const RevisionPage = lazy(() => import('./pages/RevisionPage'))
-const ExplorerPage = lazy(() => import('./pages/ExplorerPage'))
-const PersonalNotesPage = lazy(() => import('./pages/PersonalNotesPage'))
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
-const ZendeskPage = lazy(() => import('./pages/ZendeskPage'))
 
 export default function App() {
   const { notes, mods, syncState, saveNote, deleteNote, saveMod, deleteMod, refresh } = useFirebase()
@@ -65,45 +59,6 @@ export default function App() {
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showCommandPalette, setShowCommandPalette] = useState(false)
   let toastTimer = null
-
-  // --- FIX ROUTING : Restauration de la page au chargement ---
-  useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.slice(1) // Enlève le #
-      
-      if (!hash) {
-        setPage('home')
-        return
-      }
-
-      // Logique pour restaurer la bonne vue selon l'URL
-      if (hash.startsWith('module/')) {
-        const id = hash.split('/')[1]
-        setCurMod(id)
-        setPage('module')
-      } else if (hash.startsWith('fiche/')) {
-        const id = hash.split('/')[1]
-        // On tente de trouver le module associé à la note si possible
-        const note = notes.find(n => n.id === id)
-        if (note) setCurMod(note.module)
-        setCurFiche(id)
-        setPage('fiche')
-      } else if (hash === 'revision') {
-        setPage('revision')
-      } else if (hash === 'explorer') {
-        setPage('explorer')
-      } else if (hash === 'perso') {
-        setPage('perso')
-      }
-    }
-
-    // Lance la vérification au démarrage
-    handleHashChange()
-    
-    // Écoute les changements d'URL (bouton précédent/suivant)
-    window.addEventListener('hashchange', handleHashChange)
-    return () => window.removeEventListener('hashchange', handleHashChange)
-  }, [notes]) // Dépendance aux notes pour retrouver le module
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode)
@@ -257,7 +212,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen transition-colors duration-500 relative selection:bg-accent/30" style={{ background: darkMode ? '#000000' : '#F5F5F7' }}>
+    <div className="min-h-screen transition-colors duration-500" style={{ background: darkMode ? '#0d1117' : '#f5f5f7' }}>
       {page === 'home' && <ParticleBackground darkMode={darkMode} />}
       <div ref={appRef} className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-24 sm:pb-8 relative z-10">
         <Header
@@ -275,164 +230,162 @@ export default function App() {
         />
 
         <AnimatePresence mode="wait">
-          <Suspense fallback={<div className="flex justify-center items-center h-64 opacity-50 animate-pulse">Chargement...</div>}>
-            <motion.div key={page}
-              initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: .18, ease: 'easeOut' }}
-            >
-              {page === 'home' && (
-                <HomePage
-                  mods={mods} notes={notes} syncState={syncState}
-                  onModule={goModule}
-                  onAddMod={isAdmin ? () => setPage('modform') : null}
-                  onDeleteMod={isAdmin ? async id => { await deleteMod(id); showToast('Module supprime') } : null}
-                  onRevision={goRevision}
-                  onExplorer={goExplorer}
-                  history={history} onFiche={goFiche}
-                  stats={stats} streak={streak} last7Days={last7Days}
-                  globalScore={globalScore} totalReviewed={totalReviewed}
-                  worstNotes={worstNotes}
-                  onClearStats={() => { clearStats(); clearMastery(); clearSRS(); showToast('Stats reinitialisees') }}
-                  notifPermission={notifPermission} notifSettings={notifSettings}
-                  onRequestNotifPermission={requestPermission}
-                  onSaveNotifSettings={saveNotifSettings}
-                  onTestNotif={() => { sendNotification('LGPI Notes', 'Notification test !'); showToast('Notification envoyee !') }}
-                  onImportJSON={handleImportJSON}
-                  onImportFiches={handleImportFiches}
-                  onRefresh={refresh}
-                  onDashboard={isAdmin ? goDashboard : null}
-                  onZendesk={isAdmin ? goZendesk : null}
-                  userId={userId}
-                  allBadges={allBadges}
-                  getMasteryLevel={getLevel}
-                  masteryStats={masteryStats}
-                  srsStats={srsStats}
-                  isAdmin={isAdmin}
-                />
-              )}
+          <motion.div key={page}
+            initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: .18, ease: 'easeOut' }}
+          >
+            {page === 'home' && (
+              <HomePage
+                mods={mods} notes={notes} syncState={syncState}
+                onModule={goModule}
+                onAddMod={isAdmin ? () => setPage('modform') : null}
+                onDeleteMod={isAdmin ? async id => { await deleteMod(id); showToast('Module supprime') } : null}
+                onRevision={goRevision}
+                onExplorer={goExplorer}
+                history={history} onFiche={goFiche}
+                stats={stats} streak={streak} last7Days={last7Days}
+                globalScore={globalScore} totalReviewed={totalReviewed}
+                worstNotes={worstNotes}
+                onClearStats={() => { clearStats(); clearMastery(); clearSRS(); showToast('Stats reinitialisees') }}
+                notifPermission={notifPermission} notifSettings={notifSettings}
+                onRequestNotifPermission={requestPermission}
+                onSaveNotifSettings={saveNotifSettings}
+                onTestNotif={() => { sendNotification('LGPI Notes', 'Notification test !'); showToast('Notification envoyee !') }}
+                onImportJSON={handleImportJSON}
+                onImportFiches={handleImportFiches}
+                onRefresh={refresh}
+                onDashboard={isAdmin ? goDashboard : null}
+                onZendesk={isAdmin ? goZendesk : null}
+                userId={userId}
+                allBadges={allBadges}
+                getMasteryLevel={getLevel}
+                masteryStats={masteryStats}
+                srsStats={srsStats}
+                isAdmin={isAdmin}
+              />
+            )}
 
-              {page === 'module' && currentMod && (
-                <ModulePage
-                  mod={currentMod} notes={notes}
-                  onBack={goHome}
-                  onFiche={id => goFiche(id)}
-                  onNewFiche={isAdmin ? () => { setEditingNote(null); setPage('form') } : null}
-                  onDeleteNote={isAdmin ? async id => { await deleteNote(id); showToast('Fiche supprimee') } : null}
-                  pinned={pinned}
-                  onTogglePin={id => {
-                    const was = isPinned(id); togglePin(id)
-                    showToast(was ? 'Desepinglee' : 'Epinglee !')
-                  }}
-                  getMasteryLevel={getLevel}
-                  isAdmin={isAdmin}
-                />
-              )}
+            {page === 'module' && currentMod && (
+              <ModulePage
+                mod={currentMod} notes={notes}
+                onBack={goHome}
+                onFiche={id => goFiche(id)}
+                onNewFiche={isAdmin ? () => { setEditingNote(null); setPage('form') } : null}
+                onDeleteNote={isAdmin ? async id => { await deleteNote(id); showToast('Fiche supprimee') } : null}
+                pinned={pinned}
+                onTogglePin={id => {
+                  const was = isPinned(id); togglePin(id)
+                  showToast(was ? 'Desepinglee' : 'Epinglee !')
+                }}
+                getMasteryLevel={getLevel}
+                isAdmin={isAdmin}
+              />
+            )}
 
-              {page === 'fiche' && currentNote && currentMod && (
-                <FichePage
-                  note={currentNote} mod={currentMod} allNotes={notes}
-                  onBack={dest => { if (dest === 'home') goHome(); else setPage('module') }}
-                  onEdit={isAdmin ? () => { setEditingNote(currentNote); setPage('form') } : null}
-                  onDelete={isAdmin ? async () => { await deleteNote(curFiche); showToast('Fiche supprimee'); setPage('module') } : null}
-                  getShareUrl={(id) => getShareUrl('fiche', { ficheId: id, modId: curMod })}
-                  onFiche={goFiche} onToast={showToast}
-                  account={account}
-                  onCopyLink={() => { copyFicheLink(curFiche); showToast('Lien copie !') }}
-                  isPinned={isPinned(curFiche)}
-                  onTogglePin={() => {
-                    const was = isPinned(curFiche); togglePin(curFiche)
-                    showToast(was ? 'Desepinglee' : 'Epinglee !')
-                  }}
-                  masteryLevel={getLevel(curFiche)}
-                  isAdmin={isAdmin}
-                  onMasteryChange={level => {
-                    setLevel(curFiche, level)
-                    showToast('Niveau mis a jour !')
-                  }}
-                />
-              )}
+            {page === 'fiche' && currentNote && currentMod && (
+              <FichePage
+                note={currentNote} mod={currentMod} allNotes={notes}
+                onBack={dest => { if (dest === 'home') goHome(); else setPage('module') }}
+                onEdit={isAdmin ? () => { setEditingNote(currentNote); setPage('form') } : null}
+                onDelete={isAdmin ? async () => { await deleteNote(curFiche); showToast('Fiche supprimee'); setPage('module') } : null}
+                getShareUrl={(id) => getShareUrl('fiche', { ficheId: id, modId: curMod })}
+                onFiche={goFiche} onToast={showToast}
+                account={account}
+                onCopyLink={() => { copyFicheLink(curFiche); showToast('Lien copie !') }}
+                isPinned={isPinned(curFiche)}
+                onTogglePin={() => {
+                  const was = isPinned(curFiche); togglePin(curFiche)
+                  showToast(was ? 'Desepinglee' : 'Epinglee !')
+                }}
+                masteryLevel={getLevel(curFiche)}
+                isAdmin={isAdmin}
+                onMasteryChange={level => {
+                  setLevel(curFiche, level)
+                  showToast('Niveau mis a jour !')
+                }}
+              />
+            )}
 
-              {page === 'form' && isAdmin && (
-                <FormPage
-                  note={editingNote} mods={mods} notes={notes} curMod={curMod}
-                  allNotes={notes}
-                  onSave={async data => {
-                    await saveNote(data); showToast('Sauvegarde !')
-                    if (editingNote) { setCurFiche(editingNote.id); setPage('fiche') }
-                    else setPage('module')
-                  }}
-                  onCancel={dest => {
-                    if (dest === 'home') goHome()
-                    else if (dest === 'fiche') setPage('fiche')
-                    else setPage('module')
-                  }}
-                />
-              )}
+            {page === 'form' && isAdmin && (
+              <FormPage
+                note={editingNote} mods={mods} notes={notes} curMod={curMod}
+                allNotes={notes}
+                onSave={async data => {
+                  await saveNote(data); showToast('Sauvegarde !')
+                  if (editingNote) { setCurFiche(editingNote.id); setPage('fiche') }
+                  else setPage('module')
+                }}
+                onCancel={dest => {
+                  if (dest === 'home') goHome()
+                  else if (dest === 'fiche') setPage('fiche')
+                  else setPage('module')
+                }}
+              />
+            )}
 
-              {page === 'modform' && isAdmin && (
-                <ModFormPage
-                  onSave={async data => { await saveMod(data); showToast('Module cree !'); goHome() }}
-                  onCancel={goHome}
-                />
-              )}
+            {page === 'modform' && isAdmin && (
+              <ModFormPage
+                onSave={async data => { await saveMod(data); showToast('Module cree !'); goHome() }}
+                onCancel={goHome}
+              />
+            )}
 
-              {page === 'zendesk' && isAdmin && (
-                <ZendeskPage
-                  onBack={goHome}
-                  mods={mods}
-                  onImportFiche={handleImportFiches}
-                />
-              )}
+            {page === 'zendesk' && isAdmin && (
+              <ZendeskPage
+                onBack={goHome}
+                mods={mods}
+                onImportFiche={handleImportFiches}
+              />
+            )}
 
-              {page === 'dashboard' && isAdmin && (
-                <AdminDashboard
-                  onBack={goHome}
-                  globalStats={getGlobalStats(ACCOUNTS, notes, mods)}
-                  mostViewed={getMostViewedNotes(notes, 8)}
-                  notes={notes} mods={mods}
-                  onFiche={goFiche}
-                  activity={activity}
-                />
-              )}
+            {page === 'dashboard' && isAdmin && (
+              <AdminDashboard
+                onBack={goHome}
+                globalStats={getGlobalStats(ACCOUNTS, notes, mods)}
+                mostViewed={getMostViewedNotes(notes, 8)}
+                notes={notes} mods={mods}
+                onFiche={goFiche}
+                activity={activity}
+              />
+            )}
 
-              {page === 'explorer' && (
-                <ExplorerPage
-                  notes={notes}
-                  mods={mods}
-                  onBack={goHome}
-                  onFiche={goFiche}
-                  getMasteryLevel={getLevel}
-                />
-              )}
+            {page === 'explorer' && (
+              <ExplorerPage
+                notes={notes}
+                mods={mods}
+                onBack={goHome}
+                onFiche={goFiche}
+                getMasteryLevel={getLevel}
+              />
+            )}
 
-              {page === 'perso' && (
-                <PersonalNotesPage
-                  account={account}
-                  onBack={goHome}
-                  allNotes={notes}
-                  mods={mods}
-                  onGoFiche={(id, modId) => {
-                    if (modId) setCurMod(modId)
-                    setCurFiche(id)
-                    addToHistory(id)
-                    setPage('fiche')
-                  }}
-                />
-              )}
+            {page === 'perso' && (
+              <PersonalNotesPage
+                account={account}
+                onBack={goHome}
+                allNotes={notes}
+                mods={mods}
+                onGoFiche={(id, modId) => {
+                  if (modId) setCurMod(modId)
+                  setCurFiche(id)
+                  addToHistory(id)
+                  setPage('fiche')
+                }}
+              />
+            )}
 
-              {page === 'revision' && (
-                <RevisionPage
-                  notes={notes} mods={mods}
-                  onBack={goHome}
-                  onRecordSession={recordSession}
-                  onUpdateMastery={updateFromRevision}
-                  getDueNotes={getDueNotes}
-                  updateSRS={updateSRS}
-                  srsStats={srsStats}
-                />
-              )}
-            </motion.div>
-          </Suspense>
+            {page === 'revision' && (
+              <RevisionPage
+                notes={notes} mods={mods}
+                onBack={goHome}
+                onRecordSession={recordSession}
+                onUpdateMastery={updateFromRevision}
+                getDueNotes={getDueNotes}
+                updateSRS={updateSRS}
+                srsStats={srsStats}
+              />
+            )}
+          </motion.div>
         </AnimatePresence>
 
         <Toast message={toast.msg} visible={toast.visible} />

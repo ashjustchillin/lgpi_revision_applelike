@@ -25,7 +25,7 @@ export default function HomePage({
   onImportJSON, onImportFiches,
   getMasteryLevel, masteryStats, srsStats,
   isAdmin, onDashboard, onZendesk, userId,
-  onRefresh, allBadges, account,
+  onRefresh, allBadges,
 }) {
   const { query, setQuery, results, clear } = useSearch(notes, mods, 200)
   const { history: searchHistory, addSearch, removeSearch } = useSearchHistory()
@@ -59,274 +59,270 @@ export default function HomePage({
 
   const allTags = [...new Set(notes.flatMap(n => n.tags || []))].slice(0, 12)
 
-  // Style Apple-like : Subtil, ombres douces, blanc cassé
-  const cleanCard = "bg-white dark:bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-sm hover:shadow-md transition-all"
-  const cleanInput = "bg-[var(--surface-2)] dark:bg-[var(--surface-3)] border border-[var(--border)] focus:border-[var(--accent)] focus:ring-4 focus:ring-[var(--accent)]/10"
-
   return (
-    <div className="min-h-screen bg-[var(--surface-2)] selection:bg-[var(--accent)] selection:text-white">
-      
-      {/* --- ARRIÈRE-PLAN --- */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden opacity-40 dark:opacity-20">
-        <motion.div 
-          animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.15, 0.1] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[120px]"
-          style={{ background: 'var(--accent)' }} 
-        />
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+      className="pb-24 sm:pb-0"
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      onTouchMove={onTouchMove}
+    >
+      {/* Hero */}
+      <div className="mb-6">
+        <motion.p initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+          className="text-xs font-semibold uppercase tracking-widest mb-1"
+          style={{ color: 'var(--accent)' }}>
+          Base de connaissances
+        </motion.p>
+        <motion.h1 initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .05 }}
+          className="text-3xl font-bold tracking-tight"
+          style={{ color: 'var(--text-1)', letterSpacing: '-.04em' }}>
+          Mes fiches LGPI
+        </motion.h1>
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .1 }}
+          className="text-sm mt-1" style={{ color: 'var(--text-2)' }}>
+          {notes.length} fiche{notes.length !== 1 ? 's' : ''} · {mods.length} module{mods.length !== 1 ? 's' : ''}
+          {streak > 0 && ` · 🔥 ${streak}j`}
+        </motion.p>
       </div>
 
-      {/* --- CONTENU PRINCIPAL (Largeur équilibrée) --- */}
-      <motion.div
-        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        // COMPROMIS: max-w-6xl pour utiliser l'espace sans "dilater" trop le design
-        className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        onTouchMove={onTouchMove}
-      >
-        {/* 1. HEADER */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <motion.p initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-              className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--text-3)' }}>
-              Espace de travail
-            </motion.p>
-            <motion.h1 initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .05 }}
-              className="text-3xl sm:text-4xl font-bold tracking-tight"
-              style={{ color: 'var(--text-1)', letterSpacing: '-.02em' }}>
-              {account?.name || 'Utilisateur'}
-            </motion.h1>
-          </div>
-          <motion.div 
-            whileHover={{ scale: 1.05 }}
-            className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold shadow-md flex-shrink-0"
-            style={{ background: account?.color || 'var(--accent)' }}
-          >
-            {account?.name?.[0] || '?'}
-          </motion.div>
-        </div>
-
-        {/* 2. ACTIONS RAPIDES */}
-        <div className="flex items-center gap-4 mb-10 overflow-x-auto pb-2 scrollbar-hide">
-          <motion.button
-            initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
-            onClick={onRevision}
-            className={`flex items-center gap-3 px-6 py-3.5 rounded-2xl font-bold text-white shadow-lg shadow-[var(--accent)]/20 hover:shadow-[var(--accent)]/30 hover:scale-105 active:scale-95 transition-all flex-shrink-0`}
-            style={{ background: 'var(--accent)' }}
-          >
-            <span className="text-xl">🃏</span>
-            <span className="hidden sm:inline">Réviser</span>
-            {srsStats?.due > 0 && <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-semibold ml-2">{srsStats.due}</span>}
-          </motion.button>
-
-          <motion.button
-            initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.05 }}
-            onClick={onExplorer}
-            className={`${cleanCard} flex items-center gap-3 px-6 py-3.5 flex-shrink-0 hover:border-[var(--accent)]`}
-          >
-            <span className="text-xl">📚</span>
-            <span className="hidden sm:inline font-semibold text-[var(--text-1)]">Explorer</span>
-          </motion.button>
-          
-          {isAdmin && (
-             <div className="hidden lg:flex gap-3 ml-auto">
-                {onDashboard && <button onClick={onDashboard} className="px-4 py-2 rounded-xl text-sm font-medium hover:bg-[var(--surface-2)] transition-colors text-[var(--text-2)] border border-transparent hover:border-[var(--border)]">Dashboard</button>}
-                {onAddMod && <button onClick={onAddMod} className="px-4 py-2 rounded-xl text-sm font-bold bg-[var(--accent)] text-white hover:opacity-90 transition-opacity">+ Module</button>}
-             </div>
-          )}
-        </div>
-
-        {/* 3. SEARCH */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="relative mb-10"
-        >
-          <span className="absolute left-5 top-1/2 -translate-y-1/2 text-xl pointer-events-none text-[var(--text-3)]">⌕</span>
-          <input
-            id="global-search"
-            type="text"
-            value={query}
-            onChange={e => handleSearch(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleSearchSubmit()}
-            onBlur={handleSearchSubmit}
-            placeholder={`Rechercher dans ${notes.length} fiches...`}
-            className={`w-full pl-14 pr-16 py-4 rounded-2xl text-lg outline-none transition-all ${cleanInput}`}
-            style={{ color: 'var(--text-1)' }}
-          />
-          {!query && (
-            <kbd className="absolute right-5 top-1/2 -translate-y-1/2 text-xs px-3 py-1.5 rounded-md font-mono bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-3)] hidden sm:inline-block">
-              ⌘ K
+      {/* Barre de recherche avec hint Cmd+K */}
+      <div className="relative mb-4">
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base pointer-events-none" style={{ color: 'var(--text-3)' }}>⌕</span>
+        <input
+          id="global-search"
+          type="text"
+          value={query}
+          onChange={e => handleSearch(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSearchSubmit()}
+          onBlur={handleSearchSubmit}
+          placeholder="Rechercher dans toutes les fiches..."
+          className="input-base pl-11 pr-20 py-3.5 rounded-2xl"
+          style={{ fontSize: '.9rem' }}
+        />
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+          {query ? (
+            <button onClick={() => { clear(); setActiveTag(null) }}
+              className="text-sm" style={{ color: 'var(--text-3)' }}>✕</button>
+          ) : (
+            <kbd className="hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded font-mono"
+              style={{ background: 'var(--surface-2)', color: 'var(--text-3)', border: '1px solid var(--border)' }}>
+              ⌘K
             </kbd>
           )}
-        </motion.div>
-
-        {/* 4. MODULES */}
-        {!query && (
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-[var(--text-1)]">Modules</h3>
-              <ViewToggle view={modView} onChange={changeModView} />
-            </div>
-
-            {loading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                {Array.from({ length: 4 }).map((_, i) => <SkeletonTile key={i} />)}
-              </div>
-            ) : modView === 'grid' ? (
-              <motion.div variants={container} initial="hidden" animate="show"
-                // Gap 5 pour aérer sans vider
-                className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5"
-              >
-                {mods.map(m => {
-                  const cnt = notes.filter(n => n.module === m.id).length
-                  return (
-                    <motion.button key={m.id} variants={item}
-                      onClick={() => onModule(m.id)}
-                      whileHover={{ y: -4 }}
-                      whileTap={{ scale: .98 }}
-                      className={`${cleanCard} text-left p-6 relative overflow-hidden group flex flex-col justify-between h-full`}
-                    >
-                      <div className="absolute top-0 left-0 w-full h-1" style={{ background: m.bg }} />
-                      
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shadow-sm"
-                          style={{ background: m.bg, color: m.tc }}>
-                          {m.icon}
-                        </div>
-                        {isAdmin && (
-                          <button
-                            onClick={e => { e.stopPropagation(); if (window.confirm('Supprimer ' + m.label + ' ?')) onDeleteMod(m.id) }}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-all">
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                      
-                      <div>
-                        <p className="text-base font-bold mb-1 text-[var(--text-1)] leading-tight">{m.label}</p>
-                        <p className="text-xs font-medium text-[var(--text-3)]">{cnt} fiche{cnt !== 1 ? 's' : ''}</p>
-                      </div>
-                    </motion.button>
-                  )
-                })}
-                {isAdmin && (
-                  <motion.button variants={item} onClick={onAddMod} whileTap={{ scale: .96 }}
-                    className="flex flex-col items-center justify-center gap-2 p-6 rounded-2xl border-2 border-dashed text-sm font-semibold transition-colors min-h-[160px]"
-                    style={{ borderColor: 'var(--border)', color: 'var(--text-3)' }}
-                    whileHover={{ borderColor: 'var(--accent)', color: 'var(--accent)', background: 'var(--accent-bg)' }}>
-                    <span className="text-2xl">+</span>
-                    <span>Nouveau Module</span>
-                  </motion.button>
-                )}
-              </motion.div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {mods.map(m => {
-                  const cnt = notes.filter(n => n.module === m.id).length
-                  return (
-                    <motion.button key={m.id}
-                      initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-                      onClick={() => onModule(m.id)}
-                      whileHover={{ x: 4 }}
-                      whileTap={{ scale: .98 }}
-                      className={`${cleanCard} flex items-center gap-4 p-4 text-left group`}
-                    >
-                      <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0 shadow-sm"
-                        style={{ background: m.bg, color: m.tc }}>{m.icon}</div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-[var(--text-1)]">{m.label}</p>
-                      </div>
-                      <span className="text-xs font-bold flex-shrink-0 bg-[var(--surface-2)] px-2 py-1 rounded-md text-[var(--text-3)]">
-                        {cnt}
-                      </span>
-                    </motion.button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* RÉSULTATS RECHERCHE */}
-        <AnimatePresence>
-          {query && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mb-12">
-              <p className="text-xs font-bold uppercase tracking-wider mb-4 text-[var(--text-3)]">
-                {results.length} Résultat{results.length !== 1 ? 's' : ''}
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                {results.map(n => (
-                  <motion.div key={n.id}
-                    initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
-                    onClick={() => onFiche(n.id, n.module)}
-                    className={`${cleanCard} p-6 cursor-pointer group`}
-                    whileHover={{ y: -2, borderColor: 'var(--accent)' }}
-                  >
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full mb-3"
-                      style={{ background: n.mod.bg + 'CC', color: n.mod.tc }}>
-                      {n.mod.icon} {n.mod.label}
-                    </span>
-                    <p className="text-base font-bold mb-1 text-[var(--text-1)] leading-snug">{n.title}</p>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* SECTIONS BAS DE PAGE */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-24">
-          {/* Colonne Gauche */}
-          <div className="space-y-6">
-            <div className={`${cleanCard} p-6`}>
-              <Planning userId={userId} />
-            </div>
-            <FicheduJour notes={notes} mods={mods} onFiche={onFiche} getLevel={getMasteryLevel} />
-            <HistoryPanel history={history} notes={notes} mods={mods} onFiche={onFiche} />
-          </div>
-
-          {/* Colonne Droite */}
-          <div className="space-y-6">
-            <div className={`${cleanCard} p-6`}>
-              <h3 className="text-xs font-bold uppercase tracking-wider mb-4 text-[var(--text-3)]">Statistiques</h3>
-              <StatsPanel
-                stats={stats} streak={streak} last7Days={last7Days}
-                globalScore={globalScore} totalReviewed={totalReviewed}
-                worstNotes={worstNotes} mods={mods}
-                onFiche={onFiche} onClear={onClearStats}
-                srsStats={srsStats}
-              />
-            </div>
-            
-            {masteryStats?.some(l => l.count > 0) && (
-              <div className={`${cleanCard} p-6`}>
-                <h3 className="text-xs font-bold uppercase tracking-wider mb-4 text-[var(--text-3)]">Maîtrise</h3>
-                <MasteryBar masteryStats={masteryStats} />
-              </div>
-            )}
-
-            {isAdmin && (
-               <div className={`${cleanCard} p-6`}>
-                 <h3 className="text-xs font-bold uppercase tracking-wider mb-4 text-[var(--text-3)]">Administration</h3>
-                 <div className="flex flex-wrap gap-2">
-                    {onDashboard && <button onClick={onDashboard} className="text-sm px-3 py-2 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--border)] transition-colors font-medium">Dashboard</button>}
-                    {onZendesk && <button onClick={onZendesk} className="text-sm px-3 py-2 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--border)] transition-colors font-medium">Zendesk</button>}
-                    <NotifSettings permission={notifPermission} settings={notifSettings} onRequestPermission={onRequestNotifPermission} onSaveSettings={onSaveNotifSettings} onTest={onTestNotif} />
-                    <DataIO notes={notes} mods={mods} onImport={onImportJSON} onZendesk={onZendesk} />
-                 </div>
-               </div>
-            )}
-            
-            {allBadges && allBadges.some(b => b.earnedAt) && (
-              <div className={`${cleanCard} p-6`}>
-                <BadgesPanel allBadges={allBadges} />
-              </div>
-            )}
-          </div>
         </div>
+      </div>
 
-      </motion.div>
-    </div>
+      {/* Historique recherches + tags cliquables */}
+      {!query && (
+        <div className="mb-5">
+          {searchHistory.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {searchHistory.slice(0, 5).map(q => (
+                <button key={q}
+                  onClick={() => handleSearch(q)}
+                  className="flex items-center gap-1 text-[11px] px-2.5 py-1 rounded-full transition-colors"
+                  style={{ background: 'var(--surface-2)', color: 'var(--text-2)' }}>
+                  🕐 {q}
+                  <span onClick={e => { e.stopPropagation(); removeSearch(q) }}
+                    className="ml-1 opacity-50 hover:opacity-100 text-[10px]">✕</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {allTags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {allTags.map(tag => (
+                <button key={tag}
+                  onClick={() => handleTagClick(tag)}
+                  className="text-[11px] px-2.5 py-1 rounded-full font-medium transition-all"
+                  style={activeTag === tag
+                    ? { background: 'var(--accent)', color: '#fff' }
+                    : { background: 'var(--surface-2)', color: 'var(--text-2)' }}>
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Résultats de recherche */}
+      <AnimatePresence>
+        {query && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <p className="text-xs font-medium mb-3" style={{ color: 'var(--text-2)' }}>
+              {results.length} fiche{results.length !== 1 ? 's' : ''} pour "{query}"
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-6">
+              {results.map(n => (
+                <motion.div key={n.id}
+                  initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+                  onClick={() => onFiche(n.id, n.module)}
+                  className="card-base p-4 cursor-pointer"
+                  whileHover={{ y: -2 }}>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full mb-2"
+                    style={{ background: n.mod.bg, color: n.mod.tc }}>
+                    {n.mod.icon} {n.mod.label}
+                  </span>
+                  <p className="text-sm font-semibold mb-1" style={{ color: 'var(--text-1)' }}
+                    dangerouslySetInnerHTML={{ __html: highlight(n.title, query) }} />
+                  <p className="text-xs leading-relaxed line-clamp-2" style={{ color: 'var(--text-2)' }}
+                    dangerouslySetInnerHTML={{ __html: highlight(n.excerpt, query) }} />
+                  {(n.tags || []).length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {(n.tags || []).map(t => (
+                        <span key={t} className="text-[10px] px-1.5 py-0.5 rounded-full"
+                          style={{ background: n.mod.bg, color: n.mod.tc }}>#{t}</span>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {!query && (
+        <>
+          <FicheduJour notes={notes} mods={mods} onFiche={onFiche} getLevel={getMasteryLevel} />
+          <HistoryPanel history={history} notes={notes} mods={mods} onFiche={onFiche} />
+
+          {/* Barre actions — ajout bouton Explorer */}
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              <motion.button whileTap={{ scale: .95 }} onClick={onRevision} className="btn-accent text-xs">
+                🃏 Revision
+              </motion.button>
+              {onExplorer && (
+                <motion.button whileTap={{ scale: .95 }} onClick={onExplorer} className="btn-ghost text-xs">
+                  📚 Explorer
+                </motion.button>
+              )}
+              {isAdmin && (
+                <motion.button whileTap={{ scale: .95 }} onClick={onAddMod} className="btn-ghost text-xs">
+                  + Module
+                </motion.button>
+              )}
+              {isAdmin && onDashboard && (
+                <motion.button whileTap={{ scale: .95 }} onClick={onDashboard} className="btn-ghost text-xs">
+                  📊 Dashboard
+                </motion.button>
+              )}
+              {isAdmin && onZendesk && (
+                <motion.button whileTap={{ scale: .95 }} onClick={onZendesk} className="btn-ghost text-xs">
+                  🎫 Zendesk
+                </motion.button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {isAdmin && (
+                <>
+                  <NotifSettings permission={notifPermission} settings={notifSettings}
+                    onRequestPermission={onRequestNotifPermission}
+                    onSaveSettings={onSaveNotifSettings} onTest={onTestNotif} />
+                  <DataIO notes={notes} mods={mods} onImport={onImportJSON} onZendesk={onZendesk} />
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between mb-3">
+            <SectionTitle>Modules</SectionTitle>
+            <ViewToggle view={modView} onChange={changeModView} />
+          </div>
+
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+              {Array.from({ length: 4 }).map((_, i) => <SkeletonTile key={i} />)}
+            </div>
+          ) : modView === 'grid' ? (
+            <motion.div variants={container} initial="hidden" animate="show"
+              className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+              {mods.map(m => {
+                const cnt = notes.filter(n => n.module === m.id).length
+                return (
+                  <motion.button key={m.id} variants={item}
+                    onClick={() => onModule(m.id)}
+                    whileHover={{ y: -4, boxShadow: '0 16px 40px rgba(0,0,0,.12)' }}
+                    whileTap={{ scale: .96 }}
+                    className="relative text-left p-5 rounded-2xl group border-0"
+                    style={{ background: m.bg }}>
+                    {isAdmin && (
+                      <button
+                        onClick={e => { e.stopPropagation(); if (window.confirm('Supprimer ' + m.label + ' ?')) onDeleteMod(m.id) }}
+                        className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full text-[10px] items-center justify-center hidden group-hover:flex"
+                        style={{ background: 'rgba(0,0,0,.15)', color: '#fff' }}>✕</button>
+                    )}
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 text-xl"
+                      style={{ background: 'rgba(255,255,255,.4)' }}>{m.icon}</div>
+                    <p className="text-sm font-bold leading-tight mb-0.5" style={{ color: m.tc, letterSpacing: '-.02em' }}>{m.label}</p>
+                    <p className="text-xs font-medium" style={{ color: m.tc, opacity: .6 }}>
+                      {cnt} fiche{cnt !== 1 ? 's' : ''}
+                    </p>
+                    <div className="absolute bottom-0 right-0 w-12 h-12 rounded-tl-3xl opacity-20" style={{ background: m.tc }} />
+                  </motion.button>
+                )
+              })}
+              {isAdmin && (
+                <motion.button variants={item} onClick={onAddMod} whileTap={{ scale: .96 }}
+                  className="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border-2 border-dashed text-sm font-medium transition-colors min-h-[130px]"
+                  style={{ borderColor: 'var(--border)', color: 'var(--text-3)' }}
+                  whileHover={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}>
+                  <span className="text-2xl">+</span>
+                  <span>Nouveau</span>
+                </motion.button>
+              )}
+            </motion.div>
+          ) : (
+            <div className="space-y-2 mb-6">
+              {mods.map(m => {
+                const cnt = notes.filter(n => n.module === m.id).length
+                return (
+                  <motion.button key={m.id}
+                    initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                    onClick={() => onModule(m.id)}
+                    whileHover={{ x: 4 }}
+                    whileTap={{ scale: .98 }}
+                    className="w-full flex items-center gap-3 p-3.5 rounded-xl text-left"
+                    style={{ background: m.bg }}>
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                      style={{ background: 'rgba(255,255,255,.4)' }}>{m.icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold" style={{ color: m.tc }}>{m.label}</p>
+                    </div>
+                    <span className="text-xs font-medium flex-shrink-0" style={{ color: m.tc, opacity: .7 }}>
+                      {cnt} fiche{cnt !== 1 ? 's' : ''}
+                    </span>
+                    <span style={{ color: m.tc, opacity: .5 }}>›</span>
+                  </motion.button>
+                )
+              })}
+            </div>
+          )}
+
+          {masteryStats?.some(l => l.count > 0) && (
+            <div className="mb-6"><MasteryBar masteryStats={masteryStats} /></div>
+          )}
+        </>
+      )}
+
+      {allBadges && allBadges.some(b => b.earnedAt) && (
+        <BadgesPanel allBadges={allBadges} />
+      )}
+
+      <div id="planning-section">
+        <Planning userId={userId} />
+      </div>
+
+      <StatsPanel
+        stats={stats} streak={streak} last7Days={last7Days}
+        globalScore={globalScore} totalReviewed={totalReviewed}
+        worstNotes={worstNotes} mods={mods}
+        onFiche={onFiche} onClear={onClearStats}
+        srsStats={srsStats}
+      />
+    </motion.div>
   )
 }
