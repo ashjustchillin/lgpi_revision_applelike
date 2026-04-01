@@ -149,7 +149,7 @@ export default function HomePage({
             onChange={e => handleSearch(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSearchSubmit()}
             onBlur={handleSearchSubmit}
-            placeholder="Rechercher dans {notes.length} fiches..."
+            placeholder={`Rechercher dans ${notes.length} fiches...`}
             className={`w-full pl-14 pr-16 py-4 rounded-2xl text-lg outline-none transition-all ${cleanInput}`}
             style={{ color: 'var(--text-1)' }}
           />
@@ -164,7 +164,7 @@ export default function HomePage({
         {!query && (
           <div className="mb-12">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-[var(--text-1]">Modules</h3>
+              <h3 className="text-lg font-bold text-[var(--text-1)]">Modules</h3>
               <ViewToggle view={modView} onChange={changeModView} />
             </div>
 
@@ -202,7 +202,7 @@ export default function HomePage({
                         )}
                       </div>
                       
-                      <p className="text-base font-bold mb-1 text-[var(--text-1]">{m.label}</p>
+                      <p className="text-base font-bold mb-1 text-[var(--text-1)]">{m.label}</p>
                       <p className="text-xs font-medium text-[var(--text-3)]">{cnt} fiche{cnt !== 1 ? 's' : ''}</p>
                     </motion.button>
                   )
@@ -232,7 +232,7 @@ export default function HomePage({
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0 shadow-sm"
                         style={{ background: m.bg, color: m.tc }}>{m.icon}</div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-[var(--text-1]">{m.label}</p>
+                        <p className="text-sm font-bold text-[var(--text-1)]">{m.label}</p>
                       </div>
                       <span className="text-xs font-bold flex-shrink-0 bg-[var(--surface-2)] px-2 py-1 rounded-md text-[var(--text-3)]">
                         {cnt}
@@ -264,7 +264,7 @@ export default function HomePage({
                       style={{ background: n.mod.bg + 'CC', color: n.mod.tc }}>
                       {n.mod.icon} {n.mod.label}
                     </span>
-                    <p className="text-base font-bold mb-2 text-[var(--text-1]">{n.title}</p>
+                    <p className="text-base font-bold mb-2 text-[var(--text-1)]">{n.title}</p>
                   </motion.div>
                 ))}
               </div>
